@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
 import { ShoppingBag, ShieldCheck, Zap } from "lucide-react";
+import { Link } from "react-router-dom";
 
 
 function Home() {
 const [currentFeature, setCurrentFeature] = useState(0);
 const [isVisible, setIsVisible] = useState(false);
 const [currentIndex, setCurrentIndex] = useState(0);
-const [showAll, setShowAll] = useState(false); // not used anymore, but kept for compatibility
+const [showAll, setShowAll] = useState(false); 
 
-const totalSlides = 12;      // total collections
-const itemsPerPage = 4;      // show 4 per slide
-const maxIndex = totalSlides - itemsPerPage; // 12 - 4 = 8
+const totalSlides = 12;      
+const itemsPerPage = 4;      
+const maxIndex = totalSlides - itemsPerPage; 
 
 const nextSlide = () =>
   setCurrentIndex((prev) => Math.min(prev + itemsPerPage, maxIndex));
@@ -49,14 +50,12 @@ const features = [
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Animated Background */}
       <div className="absolute inset-0">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-500/20 to-transparent rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-l from-purple-500/20 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-pink-500/10 to-blue-500/10 rounded-full blur-2xl animate-spin" style={{ animationDuration: '20s' }}></div>
       </div>
 
-      {/* Grid Pattern Overlay */}
       <div 
         className="absolute inset-0 opacity-5"
         style={{
@@ -69,7 +68,6 @@ const features = [
 
 
 
-{/* Main Content */}
 <div className="relative z-10 flex flex-col items-center justify-center min-h-[90vh] px-6">
   {/* Hero Section */}
   <section id="hero" className="w-full text-center">
@@ -117,9 +115,19 @@ const features = [
       {/* CTA Buttons */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <button className="px-8 py-3 text-lg font-semibold rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 text-white shadow-lg hover:opacity-90 transition-all">
-          Get Started
+          <Link to="/login">
+            Get Started
+          </Link>
         </button>
-        <button className="px-8 py-3 text-lg font-semibold rounded-full border border-white/20 text-gray-200 hover:bg-white/10 transition-all">
+        <button className="px-8 py-3 text-lg font-semibold rounded-full border border-white/20 text-gray-200 hover:bg-white/10 transition-all"
+            onClick={() => {
+              const about = document.getElementById("about")
+
+              if(about){
+                about.scrollIntoView({behavior: "smooth"})
+              }
+            }}
+        >
           Learn More
         </button>
       </div>
@@ -173,11 +181,7 @@ const features = [
         <div className="w-1/4 flex-shrink-0 px-3">
           <div className="group relative p-4 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-sm border border-blue-500/20 hover:border-blue-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
-              {/* Replace with: <img src="/images/bts.jpg" alt="BTS" className="w-full h-full object-cover" /> */}
-              <div className="text-center">
-                <div className="text-lg font-black mb-1">BTS</div>
-                <div className="text-xs opacity-80">Collection</div>
-              </div>
+                <img src="/assets/bts pic.jpg" alt="BTS" className="w-full h-full object-cover" />
             </div>
             <h3 className="text-white font-semibold mb-1 group-hover:text-blue-300 transition-colors duration-300">BTS Collection</h3>
             <p className="text-gray-400 text-xs">Latest albums & limited editions</p>
@@ -193,11 +197,8 @@ const features = [
         <div className="w-1/4 flex-shrink-0 px-3">
           <div className="group relative p-4 bg-gradient-to-br from-purple-500/10 to-transparent backdrop-blur-sm border border-purple-500/20 hover:border-purple-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
-              {/* Replace with: <img src="/images/blackpink.jpg" alt="BLACKPINK" className="w-full h-full object-cover" /> */}
-              <div className="text-center">
-                <div className="text-lg font-black mb-1">BLACKPINK</div>
-                <div className="text-xs opacity-80">Collection</div>
-              </div>
+                <img src="/assets/blackpink pic.jpeg" alt="BTS" className="w-full h-full object-cover" />
+
             </div>
             <h3 className="text-white font-semibold mb-1 group-hover:text-purple-300 transition-colors duration-300">BLACKPINK Items</h3>
             <p className="text-gray-400 text-xs">Official merchandise & accessories</p>
@@ -213,11 +214,8 @@ const features = [
         <div className="w-1/4 flex-shrink-0 px-3">
           <div className="group relative p-4 bg-gradient-to-br from-pink-500/10 to-transparent backdrop-blur-sm border border-pink-500/20 hover:border-pink-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-pink-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-pink-600 to-red-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
-              {/* Replace with: <img src="/images/straykids.jpg" alt="Stray Kids" className="w-full h-full object-cover" /> */}
-              <div className="text-center">
-                <div className="text-lg font-black mb-1">STRAY KIDS</div>
-                <div className="text-xs opacity-80">Collection</div>
-              </div>
+                  <img src="/assets/stray kids pic.webp" alt="BTS" className="w-full h-full object-cover" />
+
             </div>
             <h3 className="text-white font-semibold mb-1 group-hover:text-pink-300 transition-colors duration-300">Stray Kids</h3>
             <p className="text-gray-400 text-xs">Exclusive limited edition items</p>
@@ -233,11 +231,8 @@ const features = [
         <div className="w-1/4 flex-shrink-0 px-3">
           <div className="group relative p-4 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-sm border border-blue-500/20 hover:border-blue-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
-              {/* Replace with: <img src="/images/twice.jpg" alt="TWICE" className="w-full h-full object-cover" /> */}
-              <div className="text-center">
-                <div className="text-lg font-black mb-1">TWICE</div>
-                <div className="text-xs opacity-80">Collection</div>
-              </div>
+                <img src="/assets/twice pic.jpg" alt="BTS" className="w-full h-full object-cover" />
+
             </div>
             <h3 className="text-white font-semibold mb-1 group-hover:text-cyan-300 transition-colors duration-300">TWICE Special</h3>
             <p className="text-gray-400 text-xs">Photobooks & photo cards</p>
@@ -253,11 +248,8 @@ const features = [
         <div className="w-1/4 flex-shrink-0 px-3">
           <div className="group relative p-4 bg-gradient-to-br from-cyan-500/10 to-transparent backdrop-blur-sm border border-cyan-500/20 hover:border-cyan-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-cyan-600 to-purple-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
-              {/* Replace with: <img src="/images/aespa.jpg" alt="aespa" className="w-full h-full object-cover" /> */}
-              <div className="text-center">
-                <div className="text-lg font-black mb-1">AESPA</div>
-                <div className="text-xs opacity-80">Collection</div>
-              </div>
+                  <img src="/assets/aespa pic.webp" alt="BTS" className="w-full h-full object-cover" />
+
             </div>
             <h3 className="text-white font-semibold mb-1 group-hover:text-cyan-300 transition-colors duration-300">aespa Universe</h3>
             <p className="text-gray-400 text-xs">Digital & physical collectibles</p>
@@ -273,11 +265,7 @@ const features = [
         <div className="w-1/4 flex-shrink-0 px-3">
           <div className="group relative p-4 bg-gradient-to-br from-purple-500/10 to-transparent backdrop-blur-sm border border-purple-500/20 hover:border-purple-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
-              {/* Replace with: <img src="/images/gidle.jpg" alt="(G)I-DLE" className="w-full h-full object-cover" /> */}
-              <div className="text-center">
-                <div className="text-lg font-black mb-1">(G)I-DLE</div>
-                <div className="text-xs opacity-80">Collection</div>
-              </div>
+                 <img src="/assets/idle pic.webp" alt="BTS" className="w-full h-full object-cover" />
             </div>
             <h3 className="text-white font-semibold mb-1 group-hover:text-purple-300 transition-colors duration-300">(G)I-DLE Items</h3>
             <p className="text-gray-400 text-xs">Albums & exclusive merchandise</p>
@@ -293,11 +281,7 @@ const features = [
         <div className="w-1/4 flex-shrink-0 px-3">
           <div className="group relative p-4 bg-gradient-to-br from-pink-500/10 to-transparent backdrop-blur-sm border border-pink-500/20 hover:border-pink-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-pink-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-pink-600 to-orange-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
-              {/* Replace with: <img src="/images/nmixx.jpg" alt="NMIXX" className="w-full h-full object-cover" /> */}
-              <div className="text-center">
-                <div className="text-lg font-black mb-1">NMIXX</div>
-                <div className="text-xs opacity-80">Collection</div>
-              </div>
+                <img src="/assets/nmixx pic.webp" alt="BTS" className="w-full h-full object-cover" />
             </div>
             <h3 className="text-white font-semibold mb-1 group-hover:text-orange-300 transition-colors duration-300">NMIXX Collection</h3>
             <p className="text-gray-400 text-xs">Latest releases & fan items</p>
@@ -313,11 +297,8 @@ const features = [
         <div className="w-1/4 flex-shrink-0 px-3">
           <div className="group relative p-4 bg-gradient-to-br from-red-500/10 to-transparent backdrop-blur-sm border border-red-500/20 hover:border-red-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-red-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-red-600 to-pink-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
-              {/* Replace with: <img src="/images/redvelvet.jpg" alt="Red Velvet" className="w-full h-full object-cover" /> */}
-              <div className="text-center">
-                <div className="text-lg font-black mb-1">RED VELVET</div>
-                <div className="text-xs opacity-80">Collection</div>
-              </div>
+               <img src="/assets/red velvet pics.webp" alt="BTS" className="w-full h-full object-cover" />
+
             </div>
             <h3 className="text-white font-semibold mb-1 group-hover:text-red-300 transition-colors duration-300">Red Velvet</h3>
             <p className="text-gray-400 text-xs">Classic & new era merchandise</p>
@@ -333,11 +314,8 @@ const features = [
         <div className="w-1/4 flex-shrink-0 px-3">
           <div className="group relative p-4 bg-gradient-to-br from-indigo-500/10 to-transparent backdrop-blur-sm border border-indigo-500/20 hover:border-indigo-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-indigo-600 to-blue-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
-              {/* Replace with: <img src="/images/exo.jpg" alt="EXO" className="w-full h-full object-cover" /> */}
-              <div className="text-center">
-                <div className="text-lg font-black mb-1">EXO</div>
-                <div className="text-xs opacity-80">Collection</div>
-              </div>
+               <img src="/assets/exo pic.webp" alt="BTS" className="w-full h-full object-cover" />
+
             </div>
             <h3 className="text-white font-semibold mb-1 group-hover:text-indigo-300 transition-colors duration-300">EXO Legacy</h3>
             <p className="text-gray-400 text-xs">Rare finds & collector items</p>
@@ -353,11 +331,8 @@ const features = [
         <div className="w-1/4 flex-shrink-0 px-3">
           <div className="group relative p-4 bg-gradient-to-br from-orange-500/10 to-transparent backdrop-blur-sm border border-orange-500/20 hover:border-orange-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-orange-600 to-red-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
-              {/* Replace with: <img src="/images/babymonster.jpg" alt="BABYMONSTER" className="w-full h-full object-cover" /> */}
-              <div className="text-center">
-                <div className="text-lg font-black mb-1">BABYMONSTER</div>
-                <div className="text-xs opacity-80">Collection</div>
-              </div>
+                <img src="/assets/baemon pic.jpeg" alt="BTS" className="w-full h-full object-cover" />
+
             </div>
             <h3 className="text-white font-semibold mb-1 group-hover:text-orange-300 transition-colors duration-300">BABYMONSTER</h3>
             <p className="text-gray-400 text-xs">Debut collection & exclusives</p>
@@ -473,7 +448,9 @@ const features = [
   {/* CTA */}
   <div className="mt-16 text-center">
     <button className="px-10 py-4 text-lg font-semibold rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 text-white shadow-lg hover:opacity-90 transition-all">
-      Explore Trading Hub
+      <Link to="/login">
+            Explore Trading Hubs
+          </Link>
     </button>
   </div>
 </section>
@@ -528,9 +505,12 @@ const features = [
     Connect with fans worldwide, trade your collectibles, and celebrate 
     the love for K-pop together.
   </p>
-  <button className="px-10 py-4 text-lg font-semibold rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 text-white shadow-lg hover:opacity-90 transition-all">
+  <Link 
+    to="/login" 
+    className="inline-block px-10 py-4 text-lg font-semibold rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 text-white shadow-lg hover:opacity-90 transition-all cursor-pointer"
+  >
     Join Now
-  </button>
+  </Link>
 </section>
       
       

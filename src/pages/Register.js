@@ -176,7 +176,7 @@ function Register() {
               </button>
             </div>
 
-            {/* Social Register Options */}
+            {/* Social Register Options
             <div className="mt-8">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -197,7 +197,7 @@ function Register() {
                   <span className="ml-2 text-sm">Apple</span>
                 </button>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

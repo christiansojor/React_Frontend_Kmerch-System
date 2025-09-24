@@ -147,7 +147,7 @@ function Login() {
               </button>
             </div>
 
-            {/* Social Login Options */}
+            {/* Social Login Options
             <div className="mt-8">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -168,7 +168,7 @@ function Login() {
                   <span className="ml-2 text-sm">Apple</span>
                 </button>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

@@ -89,9 +89,9 @@ function Navbar() {
             
             <button className="relative group"
                 onClick={() => {
-                    const hero = document.getElementById("hero")
-                    if(hero){
-                        hero.scrollIntoView({behavior: "smooth"})
+                    const community = document.getElementById("community")
+                    if(community){
+                        community.scrollIntoView({behavior: "smooth"})
                     }
                 }}
             >
