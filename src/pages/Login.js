@@ -1,13 +1,52 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function Login() {
   const [isVisible, setIsVisible] = useState(false);
   const [focusedField, setFocusedField] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
+
+  const handleLogin = async (e) => {
+  e.preventDefault();
+  if (isLoading) return;  // <-- prevents double execution
+
+  setIsLoading(true);
+  setError("");
+
+  try {
+    const response = await fetch("http://127.0.0.1:8000/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.error || "Login failed");
+      return;
+    }
+
+    localStorage.setItem("token", data.token);
+
+    console.log("Token saved:", data.token);
+
+    navigate("/admin/dashboard");
+  } catch (err) {
+    setError("Something went wrong. Please try again.");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-black flex overflow-hidden">
@@ -31,9 +70,8 @@ function Login() {
       {/* Left Side - Logo Section */}
       <div className="relative z-10 flex-1 flex flex-col justify-center items-center p-8 lg:p-16">
         <div className={`text-center transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          {/* Logo Container - Replace with your actual logo */}
+          {/* Logo Container */}
           <div className="w-48 h-48 lg:w-64 lg:h-64 mx-auto mb-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-3xl flex items-center justify-center overflow-hidden group hover:scale-105 transition-transform duration-500 shadow-2xl shadow-blue-500/25">
-            {/* Replace this div with: <img src="/images/logo.png" alt="K-Dream Logo" className="w-full h-full object-contain p-4" /> */}
             <div className="text-center">
               <div className="text-6xl font-black text-white mb-2">K</div>
               <div className="text-sm text-blue-100 font-medium">DREAM</div>
@@ -85,15 +123,25 @@ function Login() {
               <p className="text-gray-400">Sign in to your account</p>
             </div>
 
-            <div className="space-y-6">
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-400 text-sm">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-6">
               {/* Email Field */}
               <div className="relative">
                 <input
                   type="email"
                   placeholder="Email Address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   onFocus={() => setFocusedField("email")}
                   onBlur={() => setFocusedField("")}
-                  className="w-full p-4 bg-transparent border-0 rounded-xl text-white placeholder-gray-400 focus:outline-none transition-all duration-300"
+                  required
+                  className="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none transition-all duration-300"
                 />
                 <div className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400 transition-all duration-300 ${focusedField === 'email' ? 'w-full' : 'w-0'}`}></div>
               </div>
@@ -103,9 +151,12 @@ function Login() {
                 <input
                   type="password"
                   placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   onFocus={() => setFocusedField("password")}
                   onBlur={() => setFocusedField("")}
-                  className="w-full p-4 bg-transparent border-0 rounded-xl text-white placeholder-gray-400 focus:outline-none transition-all duration-300"
+                  required
+                  className="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none transition-all duration-300"
                 />
                 <div className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-purple-400 to-pink-400 transition-all duration-300 ${focusedField === 'password' ? 'w-full' : 'w-0'}`}></div>
               </div>
@@ -124,51 +175,29 @@ function Login() {
               {/* Login Button */}
               <button
                 type="submit"
-                className="group relative w-full p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/25"
+                disabled={isLoading}
+                className="group relative w-full p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
                 <span className="relative flex items-center justify-center space-x-2">
-                  <span>Sign In</span>
-                  <span className="transform group-hover:translate-x-1 transition-transform duration-300">→</span>
+                  <span>{isLoading ? "Signing In..." : "Sign In"}</span>
+                  {!isLoading && (
+                    <span className="transform group-hover:translate-x-1 transition-transform duration-300">→</span>
+                  )}
                 </span>
               </button>
-            </div>
+            </form>
 
             {/* Register Link */}
             <div className="mt-8 text-center">
               <p className="text-gray-400 mb-4">New to K-Dream?</p>
-              <button className="group text-blue-400 hover:text-blue-300 font-medium transition-all duration-300">
-                <Link to="/register">
+              <Link to="/register" className="group text-blue-400 hover:text-blue-300 font-medium transition-all duration-300">
                 <span className="relative">
                   Create an account
                   <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400 transition-all duration-300 group-hover:w-full"></div>
                 </span>
-                </Link>
-              </button>
+              </Link>
             </div>
-
-            {/* Social Login Options
-            <div className="mt-8">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/10"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-gray-900 text-gray-400">Or continue with</span>
-                </div>
-              </div>
-              
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <button className="flex items-center justify-center px-4 py-3 border border-white/10 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 hover:border-white/20 transition-all duration-300">
-                  <span className="text-lg">📧</span>
-                  <span className="ml-2 text-sm">Google</span>
-                </button>
-                <button className="flex items-center justify-center px-4 py-3 border border-white/10 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 hover:border-white/20 transition-all duration-300">
-                  <span className="text-lg">📱</span>
-                  <span className="ml-2 text-sm">Apple</span>
-                </button>
-              </div>
-            </div> */}
           </div>
         </div>
       </div>
