@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Plus, Sparkles, Building2, Users } from 'lucide-react';
+import { ArrowLeft, Plus, Sparkles, Building2, Users, Upload, X } from 'lucide-react';
 
 const NewProduct = () => {
   const [name, setName] = useState('');
@@ -9,12 +9,11 @@ const NewProduct = () => {
   const [category, setCategory] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [stock, setStock] = useState('');
-  const [image, setImage] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
   const [loading, setLoading] = useState(false);
   
-  // New states for fetched data
   const [groups, setGroups] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [loadingGroups, setLoadingGroups] = useState(true);
   
@@ -22,13 +21,11 @@ const NewProduct = () => {
 
   const categories = ['Clothing', 'Accessories', 'Posters', 'Albums', 'Lightsticks'];
 
-  // Fetch groups and suppliers on component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
         
-        // Fetch groups
         const groupsRes = await fetch('http://127.0.0.1:8000/api/groups', {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -38,18 +35,6 @@ const NewProduct = () => {
         if (groupsRes.ok) {
           const groupsData = await groupsRes.json();
           setGroups(groupsData);
-        }
-        
-        // Fetch suppliers (for reference/display)
-        const suppliersRes = await fetch('http://127.0.0.1:8000/api/suppliers', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (suppliersRes.ok) {
-          const suppliersData = await suppliersRes.json();
-          setSuppliers(suppliersData);
         }
         
       } catch (err) {
@@ -62,12 +47,10 @@ const NewProduct = () => {
     fetchData();
   }, []);
 
-  // Handle group selection and auto-fill supplier
   const handleGroupChange = (e) => {
     const groupId = e.target.value;
     setSelectedGroupId(groupId);
     
-    // Find the selected group and get its supplier
     const selectedGroup = groups.find(g => g.id === parseInt(groupId));
     if (selectedGroup && selectedGroup.supplier) {
       setSelectedSupplier(selectedGroup.supplier);
@@ -76,27 +59,66 @@ const NewProduct = () => {
     }
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        alert('Please select a valid image file (JPG, PNG, GIF, or WEBP)');
+        return;
+      }
+      
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        return;
+      }
+      
+      setImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       const token = localStorage.getItem('token');
+      
+      // Create FormData instead of JSON
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('description', description);
+      formData.append('price', parseFloat(price));
+      formData.append('category', category);
+      formData.append('groupId', parseInt(selectedGroupId));
+      formData.append('stockQuantity', parseInt(stock) || 0);
+      
+      // Append image file if selected
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+      
       const res = await fetch('http://127.0.0.1:8000/api/products', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
+          // Don't set Content-Type - browser will set it automatically with boundary
         },
-        body: JSON.stringify({
-          name,
-          description,
-          price: parseFloat(price),
-          image,
-          category,
-          groupId: parseInt(selectedGroupId), // Send group ID instead of name
-          stockQuantity: parseInt(stock) || 0,
-        }),
+        body: formData,
       });
 
       if (!res.ok) {
@@ -207,7 +229,7 @@ const NewProduct = () => {
 
             {/* Auto-filled Supplier Display */}
             {selectedSupplier && (
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-5 animate-fadeIn">
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-5">
                 <div className="flex items-start gap-3">
                   <div className="p-2 bg-purple-600 rounded-lg">
                     <Building2 className="w-5 h-5 text-white" />
@@ -225,14 +247,7 @@ const NewProduct = () => {
                       {selectedSupplier.companyName || selectedSupplier.name}
                     </h4>
                     {selectedSupplier.email && (
-                      <p className="text-sm text-gray-600">
-                        📧 {selectedSupplier.email}
-                      </p>
-                    )}
-                    {selectedSupplier.contactPerson && (
-                      <p className="text-sm text-gray-600">
-                        👤 {selectedSupplier.contactPerson}
-                      </p>
+                      <p className="text-sm text-gray-600">📧 {selectedSupplier.email}</p>
                     )}
                   </div>
                 </div>
@@ -269,18 +284,57 @@ const NewProduct = () => {
               />
             </div>
 
-            {/* Image */}
+            {/* Image Upload */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Image URL</label>
-              <input
-                type="text"
-                value={image}
-                onChange={e => setImage(e.target.value)}
-                className="w-full border-2 border-gray-200 rounded-xl p-4 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all outline-none text-gray-900 font-medium"
-                placeholder="Enter image URL"
-              />
-              {image && (
-                <img src={image} alt={name} className="mt-4 w-40 h-40 object-cover rounded-xl border border-gray-200 shadow-sm" />
+              <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
+                <Upload className="w-4 h-4" />
+                Product Image
+              </label>
+              
+              {!imagePreview ? (
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition-colors">
+                  <input
+                    type="file"
+                    id="image-upload"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="image-upload"
+                    className="cursor-pointer flex flex-col items-center gap-3"
+                  >
+                    <div className="p-4 bg-purple-100 rounded-full">
+                      <Upload className="w-8 h-8 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-gray-700 font-semibold mb-1">
+                        Click to upload product image
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        JPG, PNG, GIF or WEBP (Max 5MB)
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              ) : (
+                <div className="relative">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-64 object-cover rounded-xl border-2 border-gray-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute top-3 right-3 p-2 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                  <div className="mt-2 text-sm text-gray-600 font-medium">
+                    {imageFile.name} ({(imageFile.size / 1024).toFixed(2)} KB)
+                  </div>
+                </div>
               )}
             </div>
 

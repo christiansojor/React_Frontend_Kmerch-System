@@ -9,10 +9,16 @@ import Register from "./pages/Register";
 import CustomerDashboard from "./pages/customer/Dashboard";
 import AdminDashboard from "./pages/admin/Dashboard";
 import MediatorDashboard from "./pages/mediator/Dashboard";
-import SupplierDashboard from "./pages/supplier/Dashboard"; // ✅ Added Supplier Dashboard import
-import StockRequest from "./pages/admin/supplier/StockRequest";
+import SupplierDashboard from "./pages/supplier/Dashboard";
 
+// Admin Layout (wraps admin pages with sidebar)
+import AdminLayout from "./components/AdminLayout";
+
+// Admin Pages
+import StockRequest from "./pages/admin/supplier/StockRequest";
 import GroupsManagement from './pages/admin/GroupsManagement';
+import SupplierManagement from './pages/admin/supplier/SupplierManagement';
+
 
 // Admin Product CRUD
 import ProductManagement from "./pages/admin/products/ProductManagement";
@@ -34,7 +40,7 @@ function AppContent() {
       {showNavbar && (
         <>
           <Navbar />
-          <div className="pt-16" /> {/* Padding so content doesn’t hide under navbar */}
+          <div className="pt-16" /> {/* Padding so content doesn't hide under navbar */}
         </>
       )}
 
@@ -44,23 +50,25 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Dashboards */}
+        {/* Dashboard routes (without AdminLayout - direct access) */}
         <Route path="/customer/dashboard" element={<CustomerDashboard />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/mediator/dashboard" element={<MediatorDashboard />} />
-        <Route path="/supplier/dashboard" element={<SupplierDashboard />} /> {/* ✅ Supplier Dashboard Route */}
-        <Route path="/admin/supplier/stock-request" element={<StockRequest />} />
+        <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
 
-        <Route path="/admin/groups" element={<GroupsManagement />} />
+        {/* Admin routes with shared sidebar layout */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="supplier/stock-request" element={<StockRequest />} />
+          <Route path="groups" element={<GroupsManagement />} />
+          <Route path="/admin/suppliers" element={<SupplierManagement />} />
 
-
-
-
-        {/* Admin Product CRUD */}
-        <Route path="/admin/products" element={<ProductManagement />} />
-        <Route path="/admin/products/new" element={<NewProduct />} />
-        <Route path="/admin/products/edit/:id" element={<EditProduct />} />
-        <Route path="/admin/products/view/:id" element={<ViewProduct />} />
+          
+          {/* Admin Product CRUD */}
+          <Route path="products" element={<ProductManagement />} />
+          <Route path="products/new" element={<NewProduct />} />
+          <Route path="products/edit/:id" element={<EditProduct />} />
+          <Route path="products/view/:id" element={<ViewProduct />} />
+        </Route>
       </Routes>
     </>
   );

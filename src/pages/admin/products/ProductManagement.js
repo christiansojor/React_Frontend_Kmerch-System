@@ -7,11 +7,14 @@ const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Base URL for your Symfony backend
+  const BASE_URL = 'http://127.0.0.1:8000';
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const token = sessionStorage.getItem('token') || '';
-        const response = await fetch('http://127.0.0.1:8000/api/products', {
+        const response = await fetch(`${BASE_URL}/api/products`, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
@@ -38,7 +41,7 @@ const ProductManagement = () => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
       const token = sessionStorage.getItem('token') || '';
-      const response = await fetch(`http://127.0.0.1:8000/api/products/${id}`, {
+      const response = await fetch(`${BASE_URL}/api/products/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -49,6 +52,19 @@ const ProductManagement = () => {
       console.error(err);
       alert('Failed to delete product.');
     }
+  };
+
+  // Helper function to get the full image URL
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    
+    // If it's already a full URL (starts with http), return as is
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    
+    // If it's a relative path, prepend the base URL
+    return `${BASE_URL}${imagePath}`;
   };
 
   const getStatusBadge = (status) => {
@@ -165,17 +181,24 @@ const ProductManagement = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        {product.image ? (
+                        {getImageUrl(product.image) ? (
                           <img
-                            src={product.image}
+                            src={getImageUrl(product.image)}
                             alt={product.name}
                             className="w-16 h-16 object-cover rounded-lg shadow-md ring-2 ring-purple-100"
+                            onError={(e) => {
+                              // Fallback if image fails to load
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
                           />
-                        ) : (
-                          <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
-                            <Package className="w-6 h-6 text-gray-400" />
-                          </div>
-                        )}
+                        ) : null}
+                        <div 
+                          className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center"
+                          style={{ display: getImageUrl(product.image) ? 'none' : 'flex' }}
+                        >
+                          <Package className="w-6 h-6 text-gray-400" />
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
@@ -188,9 +211,9 @@ const ProductManagement = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        {product.groupName ? (
+                        {product.group?.name || product.groupName ? (
                           <span className="inline-flex items-center px-3 py-1 rounded-lg bg-gradient-to-r from-indigo-50 to-blue-50 text-indigo-700 text-sm font-medium border border-indigo-200">
-                            {product.groupName}
+                            {product.group?.name || product.groupName}
                           </span>
                         ) : (
                           <span className="text-gray-400 text-sm">-</span>
