@@ -12,6 +12,7 @@ import MediatorDashboard from "./pages/mediator/Dashboard";
 import SupplierDashboard from "./pages/supplier/Dashboard"; // ✅ Added Supplier Dashboard import
 import StockRequest from "./pages/admin/supplier/StockRequest";
 
+import GroupsManagement from './pages/admin/GroupsManagement';
 
 // Admin Product CRUD
 import ProductManagement from "./pages/admin/products/ProductManagement";
@@ -49,6 +50,10 @@ function AppContent() {
         <Route path="/mediator/dashboard" element={<MediatorDashboard />} />
         <Route path="/supplier/dashboard" element={<SupplierDashboard />} /> {/* ✅ Supplier Dashboard Route */}
         <Route path="/admin/supplier/stock-request" element={<StockRequest />} />
+
+        <Route path="/admin/groups" element={<GroupsManagement />} />
+
+
 
 
         {/* Admin Product CRUD */}

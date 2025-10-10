@@ -1,21 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Plus, Sparkles } from 'lucide-react';
+import { ArrowLeft, Package, Plus, Sparkles, Building2, Users } from 'lucide-react';
 
 const NewProduct = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('');
-  const [group, setGroup] = useState('');
+  const [selectedGroupId, setSelectedGroupId] = useState('');
   const [stock, setStock] = useState('');
   const [image, setImage] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // New states for fetched data
+  const [groups, setGroups] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [loadingGroups, setLoadingGroups] = useState(true);
+  
   const navigate = useNavigate();
 
-  // For now, let's use static options — later we can fetch these from backend
   const categories = ['Clothing', 'Accessories', 'Posters', 'Albums', 'Lightsticks'];
-  const groups = ['BTS', 'Blackpink', 'EXO', 'Twice', 'NewJeans'];
+
+  // Fetch groups and suppliers on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        
+        // Fetch groups
+        const groupsRes = await fetch('http://127.0.0.1:8000/api/groups', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (groupsRes.ok) {
+          const groupsData = await groupsRes.json();
+          setGroups(groupsData);
+        }
+        
+        // Fetch suppliers (for reference/display)
+        const suppliersRes = await fetch('http://127.0.0.1:8000/api/suppliers', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (suppliersRes.ok) {
+          const suppliersData = await suppliersRes.json();
+          setSuppliers(suppliersData);
+        }
+        
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+      } finally {
+        setLoadingGroups(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Handle group selection and auto-fill supplier
+  const handleGroupChange = (e) => {
+    const groupId = e.target.value;
+    setSelectedGroupId(groupId);
+    
+    // Find the selected group and get its supplier
+    const selectedGroup = groups.find(g => g.id === parseInt(groupId));
+    if (selectedGroup && selectedGroup.supplier) {
+      setSelectedSupplier(selectedGroup.supplier);
+    } else {
+      setSelectedSupplier(null);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,16 +94,20 @@ const NewProduct = () => {
           price: parseFloat(price),
           image,
           category,
-          group,
-          stock: parseInt(stock) || 0,
+          groupId: parseInt(selectedGroupId), // Send group ID instead of name
+          stockQuantity: parseInt(stock) || 0,
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to create product');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to create product');
+      }
+      
       navigate('/admin/products');
     } catch (err) {
       console.error(err);
-      alert('Failed to create product');
+      alert(err.message || 'Failed to create product');
     } finally {
       setLoading(false);
     }
@@ -118,21 +181,63 @@ const NewProduct = () => {
               </select>
             </div>
 
-            {/* Group */}
+            {/* Group Selection */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Group</label>
+              <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
+                <Users className="w-4 h-4" />
+                K-Pop Group
+              </label>
               <select
-                value={group}
-                onChange={e => setGroup(e.target.value)}
+                value={selectedGroupId}
+                onChange={handleGroupChange}
                 required
-                className="w-full border-2 border-gray-200 rounded-xl p-4 bg-white focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all outline-none text-gray-900 font-medium"
+                disabled={loadingGroups}
+                className="w-full border-2 border-gray-200 rounded-xl p-4 bg-white focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all outline-none text-gray-900 font-medium disabled:bg-gray-50 disabled:cursor-not-allowed"
               >
-                <option value="">Select group</option>
+                <option value="">
+                  {loadingGroups ? 'Loading groups...' : 'Select a group'}
+                </option>
                 {groups.map(g => (
-                  <option key={g} value={g}>{g}</option>
+                  <option key={g.id} value={g.id}>
+                    {g.name} {g.debutYear && `(${g.debutYear})`}
+                  </option>
                 ))}
               </select>
             </div>
+
+            {/* Auto-filled Supplier Display */}
+            {selectedSupplier && (
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-5 animate-fadeIn">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-purple-600 rounded-lg">
+                    <Building2 className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold text-purple-600 uppercase tracking-wide">
+                        Entertainment Company
+                      </span>
+                      <span className="px-2 py-0.5 bg-purple-600 text-white text-xs font-bold rounded-full">
+                        Auto-Selected
+                      </span>
+                    </div>
+                    <h4 className="text-lg font-bold text-gray-900 mb-1">
+                      {selectedSupplier.companyName || selectedSupplier.name}
+                    </h4>
+                    {selectedSupplier.email && (
+                      <p className="text-sm text-gray-600">
+                        📧 {selectedSupplier.email}
+                      </p>
+                    )}
+                    {selectedSupplier.contactPerson && (
+                      <p className="text-sm text-gray-600">
+                        👤 {selectedSupplier.contactPerson}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Price */}
             <div>
@@ -183,7 +288,7 @@ const NewProduct = () => {
             <div className="flex gap-3 pt-4">
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || loadingGroups}
                 className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {loading ? (
