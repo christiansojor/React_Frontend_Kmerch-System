@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Edit2, Trash2, Building2, Calendar } from 'lucide-react';
+import { Users, Plus, Edit2, Trash2, Building2, Calendar, Search } from 'lucide-react';
 
 const GroupsManagement = () => {
   const [groups, setGroups] = useState([]);
@@ -7,6 +7,8 @@ const GroupsManagement = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingGroup, setEditingGroup] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
   
   const [formData, setFormData] = useState({
     name: '',
@@ -75,6 +77,8 @@ const GroupsManagement = () => {
         setEditingGroup(null);
         setFormData({ name: '', debutYear: '', supplierId: '', status: 'active' });
         fetchGroups();
+        window.dispatchEvent(new Event("groupUpdated"));
+
       }
     } catch (err) {
       console.error('Failed to save group:', err);
@@ -112,103 +116,159 @@ const GroupsManagement = () => {
     }
   };
 
+  // Filter groups
+  const filteredGroups = groups.filter(group => {
+    const matchesSearch = group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         group.supplier?.companyName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         group.supplier?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = filterStatus === 'all' || group.status === filterStatus;
+    
+    return matchesSearch && matchesStatus;
+  });
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-600 border-t-transparent"></div>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-2 border-purple-300 border-t-purple-600 mb-4"></div>
+          <p className="text-gray-600 font-medium text-lg">Loading groups...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl shadow-lg">
-              <Users className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                K-Pop Groups
-              </h2>
-              <p className="text-gray-600 text-sm mt-1">Manage artist groups and their companies</p>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="px-6 py-5 flex items-center justify-between max-w-[1600px] mx-auto">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-1">
+              K-Pop Groups
+            </h2>
+            <p className="text-gray-500 font-medium text-sm">Manage artist groups and their companies</p>
           </div>
-          
           <button
             onClick={() => {
               setEditingGroup(null);
               setFormData({ name: '', debutYear: '', supplierId: '', status: 'active' });
               setShowModal(true);
             }}
-            className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl font-bold"
+            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-md transition-all duration-200 flex items-center gap-2 font-medium text-sm"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4" strokeWidth={1.5} />
             Add Group
           </button>
         </div>
+      </header>
 
-        {/* Groups Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {groups.map(group => (
-            <div key={group.id} className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6 hover:shadow-2xl transition-all">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">{group.name}</h3>
-                  {group.debutYear && (
-                    <div className="flex items-center gap-1.5 text-sm text-gray-600 mb-3">
-                      <Calendar className="w-4 h-4" />
-                      <span>Debut {group.debutYear}</span>
-                    </div>
-                  )}
-                </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  group.status === 'active' 
-                    ? 'bg-green-100 text-green-700' 
-                    : 'bg-gray-100 text-gray-700'
-                }`}>
-                  {group.status}
-                </span>
-              </div>
-              
-              {group.supplier && (
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 mb-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Building2 className="w-4 h-4 text-purple-600" />
-                    <span className="text-xs font-bold text-purple-600 uppercase">Company</span>
-                  </div>
-                  <p className="font-bold text-gray-900">{group.supplier.companyName || group.supplier.name}</p>
-                </div>
-              )}
-              
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleEdit(group)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-all font-medium"
-                >
-                  <Edit2 className="w-4 h-4" />
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(group.id)}
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all font-medium"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
+      {/* Content */}
+      <div className="p-6 max-w-[1600px] mx-auto">
+        {/* Search and Filters */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" strokeWidth={1.5} />
+              <input
+                type="text"
+                placeholder="Search groups..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
+              />
             </div>
-          ))}
+            <div className="flex gap-3">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm bg-white"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
         </div>
 
-        {groups.length === 0 && (
-          <div className="text-center py-16">
-            <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">No groups yet. Add your first K-Pop group!</p>
+        {/* Groups Grid */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white bg-opacity-20 rounded-lg backdrop-blur-sm">
+                  <Users className="w-5 h-5 text-white" strokeWidth={1.5} />
+                </div>
+                <h3 className="text-xl font-bold text-white">All Groups</h3>
+              </div>
+              <span className="px-3 py-1.5 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg text-sm font-bold text-white">
+                {filteredGroups.length} groups
+              </span>
+            </div>
           </div>
-        )}
+
+          <div className="p-5">
+            {filteredGroups.length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" strokeWidth={1.5} />
+                <p className="text-gray-400 font-medium">No groups found</p>
+                <p className="text-gray-400 text-sm mt-1">Try adjusting your filters</p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredGroups.map(group => (
+                  <div key={group.id} className="bg-white rounded-xl border border-gray-200 p-5 hover:border-gray-300 transition-all duration-200">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-gray-900 mb-1">{group.name}</h3>
+                        {group.debutYear && (
+                          <div className="flex items-center gap-1.5 text-sm text-gray-600 mb-2">
+                            <Calendar className="w-4 h-4" strokeWidth={1.5} />
+                            <span className="font-medium">Debut {group.debutYear}</span>
+                          </div>
+                        )}
+                      </div>
+                      <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold border ${
+                        group.status === 'active' 
+                          ? 'bg-purple-50 text-purple-700 border-purple-200' 
+                          : 'bg-gray-50 text-gray-700 border-gray-200'
+                      }`}>
+                        {group.status?.toUpperCase()}
+                      </span>
+                    </div>
+                    
+                    {group.supplier && (
+                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-3 mb-4 border border-purple-100">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Building2 className="w-4 h-4 text-purple-600" strokeWidth={1.5} />
+                          <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Company</span>
+                        </div>
+                        <p className="font-semibold text-gray-900 text-sm">{group.supplier.companyName || group.supplier.name}</p>
+                      </div>
+                    )}
+                    
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEdit(group)}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:shadow-md transition-all font-medium text-sm"
+                      >
+                        <Edit2 className="w-4 h-4" strokeWidth={1.5} />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(group.id)}
+                        className="flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-lg hover:shadow-md transition-all font-medium text-sm"
+                      >
+                        <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Modal */}
@@ -221,35 +281,35 @@ const GroupsManagement = () => {
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Group Name</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Group Name</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
                   required
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none"
+                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
                   placeholder="e.g. BTS, Blackpink"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Debut Year</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Debut Year</label>
                 <input
                   type="text"
                   value={formData.debutYear}
                   onChange={e => setFormData({...formData, debutYear: e.target.value})}
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none"
+                  className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
                   placeholder="e.g. 2013"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Entertainment Company</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Entertainment Company</label>
                 <select
                   value={formData.supplierId}
                   onChange={e => setFormData({...formData, supplierId: e.target.value})}
                   required
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 bg-white focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none"
+                  className="w-full border border-gray-300 rounded-xl p-3 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
                 >
                   <option value="">Select company</option>
                   {suppliers.map(s => (
@@ -261,11 +321,11 @@ const GroupsManagement = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Status</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
                 <select
                   value={formData.status}
                   onChange={e => setFormData({...formData, status: e.target.value})}
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 bg-white focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none"
+                  className="w-full border border-gray-300 rounded-xl p-3 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
                 >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
@@ -275,7 +335,7 @@ const GroupsManagement = () => {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all font-bold"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-md transition-all font-medium text-sm"
                 >
                   {editingGroup ? 'Update' : 'Create'}
                 </button>
@@ -285,7 +345,7 @@ const GroupsManagement = () => {
                     setShowModal(false);
                     setEditingGroup(null);
                   }}
-                  className="px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium"
+                  className="px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-medium text-sm"
                 >
                   Cancel
                 </button>

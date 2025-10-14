@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Sparkles, Building2, Users, Upload, X } from 'lucide-react';
 
 const NewProduct = () => {
@@ -16,15 +15,13 @@ const NewProduct = () => {
   const [groups, setGroups] = useState([]);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [loadingGroups, setLoadingGroups] = useState(true);
-  
-  const navigate = useNavigate();
 
   const categories = ['Clothing', 'Accessories', 'Posters', 'Albums', 'Lightsticks'];
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = 'dummy-token';
         
         const groupsRes = await fetch('http://127.0.0.1:8000/api/groups', {
           headers: {
@@ -62,14 +59,12 @@ const NewProduct = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
       const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
       if (!validTypes.includes(file.type)) {
         alert('Please select a valid image file (JPG, PNG, GIF, or WEBP)');
         return;
       }
       
-      // Validate file size (5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert('File size must be less than 5MB');
         return;
@@ -77,7 +72,6 @@ const NewProduct = () => {
       
       setImageFile(file);
       
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -96,9 +90,8 @@ const NewProduct = () => {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = 'dummy-token';
       
-      // Create FormData instead of JSON
       const formData = new FormData();
       formData.append('name', name);
       formData.append('description', description);
@@ -107,7 +100,6 @@ const NewProduct = () => {
       formData.append('groupId', parseInt(selectedGroupId));
       formData.append('stockQuantity', parseInt(stock) || 0);
       
-      // Append image file if selected
       if (imageFile) {
         formData.append('image', imageFile);
       }
@@ -116,7 +108,6 @@ const NewProduct = () => {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
-          // Don't set Content-Type - browser will set it automatically with boundary
         },
         body: formData,
       });
@@ -126,7 +117,7 @@ const NewProduct = () => {
         throw new Error(errorData.error || 'Failed to create product');
       }
       
-      navigate('/admin/products');
+      alert('Product created successfully!');
     } catch (err) {
       console.error(err);
       alert(err.message || 'Failed to create product');
@@ -136,114 +127,113 @@ const NewProduct = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-8">
-      <div className="max-w-2xl mx-auto">
-        <button
-          onClick={() => navigate('/admin/products')}
-          className="group flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 rounded-xl shadow-md hover:shadow-lg transition-all border border-gray-200 mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          <span className="font-medium">Back to Products</span>
-        </button>
-
-        <div className="flex items-center gap-3 mb-8">
-          <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl shadow-lg">
-            <Plus className="w-7 h-7 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-6">
+      <div className="max-w-[1200px] mx-auto">
+        {/* Form Card */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white bg-opacity-20 rounded-lg backdrop-blur-sm">
+                <Plus className="w-5 h-5 text-white" strokeWidth={1.5} />
+              </div>
+              <h3 className="text-xl font-bold text-white">Add New Product</h3>
+            </div>
           </div>
-          <div>
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Add New Product
-            </h2>
-            <p className="text-gray-600 text-sm mt-1">Create a new product in your inventory</p>
-          </div>
-        </div>
 
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/50 p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Product Name */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Product Name</label>
+              <label className="block text-gray-700 font-semibold mb-2 text-sm">
+                Product Name <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 required
-                className="w-full border-2 border-gray-200 rounded-xl p-4 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all outline-none text-gray-900 font-medium"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
                 placeholder="Enter product name"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Description</label>
+              <label className="block text-gray-700 font-semibold mb-2 text-sm">
+                Description <span className="text-red-500">*</span>
+              </label>
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 required
                 rows="4"
-                className="w-full border-2 border-gray-200 rounded-xl p-4 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all outline-none text-gray-900 resize-none"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm resize-none"
                 placeholder="Enter product description"
               />
             </div>
 
-            {/* Category */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Category</label>
-              <select
-                value={category}
-                onChange={e => setCategory(e.target.value)}
-                required
-                className="w-full border-2 border-gray-200 rounded-xl p-4 bg-white focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all outline-none text-gray-900 font-medium"
-              >
-                <option value="">Select category</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
+            {/* Category and Group Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Category */}
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2 text-sm">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={category}
+                  onChange={e => setCategory(e.target.value)}
+                  required
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm bg-white"
+                >
+                  <option value="">Select category</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
 
-            {/* Group Selection */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
-                <Users className="w-4 h-4" />
-                K-Pop Group
-              </label>
-              <select
-                value={selectedGroupId}
-                onChange={handleGroupChange}
-                required
-                disabled={loadingGroups}
-                className="w-full border-2 border-gray-200 rounded-xl p-4 bg-white focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all outline-none text-gray-900 font-medium disabled:bg-gray-50 disabled:cursor-not-allowed"
-              >
-                <option value="">
-                  {loadingGroups ? 'Loading groups...' : 'Select a group'}
-                </option>
-                {groups.map(g => (
-                  <option key={g.id} value={g.id}>
-                    {g.name} {g.debutYear && `(${g.debutYear})`}
+              {/* Group Selection */}
+              <div>
+                <label className="flex items-center gap-2 text-gray-700 font-semibold mb-2 text-sm">
+                  <Users className="w-4 h-4" strokeWidth={1.5} />
+                  K-Pop Group <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedGroupId}
+                  onChange={handleGroupChange}
+                  required
+                  disabled={loadingGroups}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">
+                    {loadingGroups ? 'Loading groups...' : 'Select a group'}
                   </option>
-                ))}
-              </select>
+                  {groups.map(g => (
+                    <option key={g.id} value={g.id}>
+                      {g.name} {g.debutYear && `(${g.debutYear})`}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Auto-filled Supplier Display */}
             {selectedSupplier && (
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-5">
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 bg-purple-600 rounded-lg">
-                    <Building2 className="w-5 h-5 text-white" />
+                  <div className="p-2 bg-purple-500 rounded-lg">
+                    <Building2 className="w-4 h-4 text-white" strokeWidth={1.5} />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-purple-600 uppercase tracking-wide">
+                      <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">
                         Entertainment Company
                       </span>
-                      <span className="px-2 py-0.5 bg-purple-600 text-white text-xs font-bold rounded-full">
+                      <span className="px-2 py-0.5 bg-purple-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" strokeWidth={1.5} />
                         Auto-Selected
                       </span>
                     </div>
-                    <h4 className="text-lg font-bold text-gray-900 mb-1">
+                    <h4 className="text-base font-bold text-gray-900 mb-1">
                       {selectedSupplier.companyName || selectedSupplier.name}
                     </h4>
                     {selectedSupplier.email && (
@@ -254,40 +244,47 @@ const NewProduct = () => {
               </div>
             )}
 
-            {/* Price */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Price (₱)</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold text-lg">₱</span>
+            {/* Price and Stock Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Price */}
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2 text-sm">
+                  Price <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold text-sm">₱</span>
+                  <input
+                    type="number"
+                    value={price}
+                    onChange={e => setPrice(e.target.value)}
+                    required
+                    className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
+                    placeholder="0.00"
+                    step="0.01"
+                  />
+                </div>
+              </div>
+
+              {/* Stock Quantity */}
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2 text-sm">
+                  Initial Stock
+                </label>
                 <input
                   type="number"
-                  value={price}
-                  onChange={e => setPrice(e.target.value)}
-                  required
-                  className="w-full border-2 border-gray-200 rounded-xl p-4 pl-10 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all outline-none text-gray-900 font-medium"
-                  placeholder="0.00"
-                  step="0.01"
+                  value={stock}
+                  onChange={e => setStock(e.target.value)}
+                  min="0"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
+                  placeholder="Enter stock quantity"
                 />
               </div>
             </div>
 
-            {/* Stock Quantity */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Initial Stock</label>
-              <input
-                type="number"
-                value={stock}
-                onChange={e => setStock(e.target.value)}
-                min="0"
-                className="w-full border-2 border-gray-200 rounded-xl p-4 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all outline-none text-gray-900 font-medium"
-                placeholder="Enter stock quantity"
-              />
-            </div>
-
             {/* Image Upload */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
-                <Upload className="w-4 h-4" />
+              <label className="flex items-center gap-2 text-gray-700 font-semibold mb-2 text-sm">
+                <Upload className="w-4 h-4" strokeWidth={1.5} />
                 Product Image
               </label>
               
@@ -305,7 +302,7 @@ const NewProduct = () => {
                     className="cursor-pointer flex flex-col items-center gap-3"
                   >
                     <div className="p-4 bg-purple-100 rounded-full">
-                      <Upload className="w-8 h-8 text-purple-600" />
+                      <Upload className="w-8 h-8 text-purple-600" strokeWidth={1.5} />
                     </div>
                     <div>
                       <p className="text-gray-700 font-semibold mb-1">
@@ -322,14 +319,14 @@ const NewProduct = () => {
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    className="w-full h-64 object-cover rounded-xl border-2 border-gray-200"
+                    className="w-full h-64 object-cover rounded-xl border border-gray-200"
                   />
                   <button
                     type="button"
                     onClick={removeImage}
-                    className="absolute top-3 right-3 p-2 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors"
+                    className="absolute top-3 right-3 p-2 bg-gradient-to-r from-pink-500 to-red-500 hover:shadow-md text-white rounded-lg transition-all"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-4 h-4" strokeWidth={1.5} />
                   </button>
                   <div className="mt-2 text-sm text-gray-600 font-medium">
                     {imageFile.name} ({(imageFile.size / 1024).toFixed(2)} KB)
@@ -339,29 +336,29 @@ const NewProduct = () => {
             </div>
 
             {/* Buttons */}
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-2">
               <button
                 type="submit"
                 disabled={loading || loadingGroups}
-                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-md transition-all duration-200 font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                     Saving...
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-5 h-5" />
+                    <Sparkles className="w-4 h-4" strokeWidth={1.5} />
                     Create Product
                   </>
                 )}
               </button>
               <button
                 type="button"
-                onClick={() => navigate('/admin/products')}
+                onClick={() => alert('Cancel clicked')}
                 disabled={loading}
-                className="px-6 py-4 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
