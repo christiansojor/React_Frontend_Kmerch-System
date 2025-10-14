@@ -11,11 +11,7 @@ import {
   Eye,
   DollarSign,
   Calendar,
-  User,
-  Building2,
-  Mail,
-  Phone,
-  MapPin
+  Trash2
 } from 'lucide-react';
 
 const SupplierDashboard = () => {
@@ -26,6 +22,7 @@ const SupplierDashboard = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [alert, setAlert] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   useEffect(() => {
     fetchRequests();
@@ -33,9 +30,11 @@ const SupplierDashboard = () => {
 
   const fetchRequests = async () => {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch('http://127.0.0.1:8000/api/stock-requests', {
         headers: { 
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -62,10 +61,12 @@ const SupplierDashboard = () => {
   const handleAction = async (id, action) => {
     setActionLoading(id);
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`http://127.0.0.1:8000/api/stock-requests/${id}/${action}`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -76,7 +77,6 @@ const SupplierDashboard = () => {
 
       const result = await response.json();
       
-      // Update local state based on the action
       const newStatus = action === 'accept' ? 'accepted' : 'declined';
       setRequests(reqs => reqs.map(r => 
         r.id === id ? { ...r, status: newStatus } : r
@@ -87,6 +87,35 @@ const SupplierDashboard = () => {
     } catch (error) {
       console.error('Error:', error);
       showAlert('error', error.message || `Failed to ${action} request`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    setActionLoading(id);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://127.0.0.1:8000/api/stock-requests/${id}`, {
+        method: 'DELETE',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete request');
+      }
+
+      setRequests(reqs => reqs.filter(r => r.id !== id));
+      showAlert('success', 'Request deleted successfully!');
+      setDeleteConfirm(null);
+      setSelectedRequest(null);
+    } catch (error) {
+      console.error('Error deleting request:', error);
+      showAlert('error', error.message || 'Failed to delete request');
     } finally {
       setActionLoading(null);
     }
@@ -145,7 +174,7 @@ const SupplierDashboard = () => {
         {/* Alert */}
         {alert && (
           <div
-            className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
+            className={`mb-6 p-4 rounded-xl flex items-center gap-3 animate-fade-in ${
               alert.type === 'success'
                 ? 'bg-green-100 text-green-800 border border-green-200'
                 : 'bg-red-100 text-red-800 border border-red-200'
@@ -356,6 +385,14 @@ const SupplierDashboard = () => {
                               </button>
                             </>
                           )}
+                          <button
+                            onClick={() => setDeleteConfirm(req.id)}
+                            disabled={actionLoading === req.id}
+                            className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-all disabled:opacity-50"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -458,31 +495,84 @@ const SupplierDashboard = () => {
                   </div>
                 )}
 
-                {selectedRequest.status?.toLowerCase() === 'pending' && (
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      onClick={() => {
-                        handleAction(selectedRequest.id, 'accept');
-                      }}
-                      disabled={actionLoading === selectedRequest.id}
-                      className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-50"
-                    >
-                      <CheckCircle className="w-5 h-5" />
-                      Accept Request
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleAction(selectedRequest.id, 'decline');
-                      }}
-                      disabled={actionLoading === selectedRequest.id}
-                      className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:from-red-700 hover:to-red-800 transition-all disabled:opacity-50"
-                    >
-                      <XCircle className="w-5 h-5" />
-                      Decline Request
-                    </button>
-                  </div>
-                )}
+                <div className="flex gap-3 pt-4">
+                  {selectedRequest.status?.toLowerCase() === 'pending' && (
+                    <>
+                      <button
+                        onClick={() => handleAction(selectedRequest.id, 'accept')}
+                        disabled={actionLoading === selectedRequest.id}
+                        className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-50"
+                      >
+                        <CheckCircle className="w-5 h-5" />
+                        Accept Request
+                      </button>
+                      <button
+                        onClick={() => handleAction(selectedRequest.id, 'decline')}
+                        disabled={actionLoading === selectedRequest.id}
+                        className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-orange-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:from-orange-700 hover:to-orange-800 transition-all disabled:opacity-50"
+                      >
+                        <XCircle className="w-5 h-5" />
+                        Decline Request
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => {
+                      setDeleteConfirm(selectedRequest.id);
+                      setSelectedRequest(null);
+                    }}
+                    disabled={actionLoading === selectedRequest.id}
+                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:from-red-700 hover:to-red-800 transition-all disabled:opacity-50"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    Delete Request
+                  </button>
+                </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-8 h-8 text-red-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Delete Request?</h2>
+              <p className="text-gray-600">
+                Are you sure you want to delete request #{deleteConfirm}? This action cannot be undone.
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={actionLoading === deleteConfirm}
+                className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-semibold disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirm)}
+                disabled={actionLoading === deleteConfirm}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {actionLoading === deleteConfirm ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-5 h-5" />
+                    Delete
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

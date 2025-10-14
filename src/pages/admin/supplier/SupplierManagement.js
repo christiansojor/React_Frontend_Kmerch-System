@@ -1,0 +1,460 @@
+import React, { useState, useEffect } from 'react';
+import { Eye, Edit2, Trash2, Plus, X, Search, Building2 } from 'lucide-react';
+
+const API_BASE = 'http://localhost:8000/api/suppliers';
+
+export default function SupplierManagement() {
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState('view');
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [formData, setFormData] = useState({
+    companyName: '',
+    contactPerson: '',
+    email: '',
+    phone: '',
+    address: '',
+    status: 'active'
+  });
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, []);
+
+  const fetchSuppliers = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(API_BASE);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Failed to fetch suppliers: ${res.status} ${text.substring(0, 100)}`);
+      }
+      const data = await res.json();
+      setSuppliers(data);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+      console.error('Fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdd = () => {
+    setModalMode('add');
+    setFormData({
+      companyName: '',
+      contactPerson: '',
+      email: '',
+      phone: '',
+      address: '',
+      status: 'active'
+    });
+    setShowModal(true);
+  };
+
+  const handleView = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/${id}`);
+      if (!res.ok) throw new Error('Failed to fetch supplier');
+      const data = await res.json();
+      setSelectedSupplier(data);
+      setModalMode('view');
+      setShowModal(true);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleEdit = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/${id}`);
+      if (!res.ok) throw new Error('Failed to fetch supplier');
+      const data = await res.json();
+      setFormData({
+        companyName: data.companyName || '',
+        contactPerson: data.contactPerson || '',
+        email: data.email || '',
+        phone: data.phone || '',
+        address: data.address || '',
+        status: data.status || 'active'
+      });
+      setSelectedSupplier(data);
+      setModalMode('edit');
+      setShowModal(true);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this supplier?')) return;
+    
+    try {
+      const res = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete supplier');
+      await fetchSuppliers();
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const url = modalMode === 'add' ? API_BASE : `${API_BASE}/${selectedSupplier.id}`;
+      const method = modalMode === 'add' ? 'POST' : 'PUT';
+      
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      
+      if (!res.ok) throw new Error(`Failed to ${modalMode} supplier`);
+      
+      await fetchSuppliers();
+      setShowModal(false);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleInputChange = (name, value) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const filteredSuppliers = suppliers.filter(s => {
+    const matchesSearch = s.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         s.contactPerson?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         s.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = filterStatus === 'all' || s.status === filterStatus;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="px-6 py-5 flex items-center justify-between max-w-[1600px] mx-auto">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-1">
+              Supplier Management
+            </h2>
+            <p className="text-gray-500 font-medium text-sm">Manage entertainment companies and suppliers</p>
+          </div>
+          <button
+            onClick={handleAdd}
+            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-md transition-all duration-200 flex items-center gap-2 font-medium text-sm"
+          >
+            <Plus className="w-4 h-4" strokeWidth={1.5} />
+            Add Supplier
+          </button>
+        </div>
+      </header>
+
+      {/* Content */}
+      <div className="p-6 max-w-[1600px] mx-auto">
+        {error && (
+          <div className="bg-pink-50 border border-pink-200 text-pink-700 px-4 py-3 rounded-xl mb-6 font-medium text-sm">
+            {error}
+          </div>
+        )}
+
+        {/* Search and Filters */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" strokeWidth={1.5} />
+              <input
+                type="text"
+                placeholder="Search suppliers..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
+              />
+            </div>
+            <div className="flex gap-3">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm bg-white"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Suppliers Table */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white bg-opacity-20 rounded-lg backdrop-blur-sm">
+                  <Building2 className="w-5 h-5 text-white" strokeWidth={1.5} />
+                </div>
+                <h3 className="text-xl font-bold text-white">All Suppliers</h3>
+              </div>
+              <span className="px-3 py-1.5 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg text-sm font-bold text-white">
+                {filteredSuppliers.length} suppliers
+              </span>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-16 w-16 border-2 border-purple-300 border-t-purple-600 mb-4"></div>
+                <p className="text-gray-600 font-medium text-lg">Loading suppliers...</p>
+              </div>
+            </div>
+          ) : filteredSuppliers.length === 0 ? (
+            <div className="text-center py-20">
+              <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-3" strokeWidth={1.5} />
+              <p className="text-gray-400 font-medium">No suppliers found</p>
+              <p className="text-gray-400 text-sm mt-1">Try adjusting your filters</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Company Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Contact Person</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Phone</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Status</th>
+                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wide">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredSuppliers.map(supplier => (
+                    <tr key={supplier.id} className="hover:bg-gray-50 transition-all">
+                      <td className="px-6 py-3">
+                        <span className="font-mono text-xs font-bold text-purple-600">#{supplier.id}</span>
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className="font-semibold text-gray-900 text-sm">{supplier.companyName}</span>
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className="text-sm text-gray-700 font-medium">{supplier.contactPerson || '-'}</span>
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className="text-sm text-gray-700 font-medium">{supplier.email || '-'}</span>
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className="text-sm text-gray-700 font-medium">{supplier.phone || '-'}</span>
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold border ${
+                          supplier.status === 'active' 
+                            ? 'bg-purple-50 text-purple-700 border-purple-200' 
+                            : 'bg-gray-50 text-gray-700 border-gray-200'
+                        }`}>
+                          {supplier.status?.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3">
+                        <div className="flex gap-2 justify-center">
+                          <button
+                            onClick={() => handleView(supplier.id)}
+                            className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-md transition-all"
+                            title="View"
+                          >
+                            <Eye className="w-4 h-4" strokeWidth={1.5} />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(supplier.id)}
+                            className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:shadow-md transition-all"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-4 h-4" strokeWidth={1.5} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(supplier.id)}
+                            className="p-2 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-lg hover:shadow-md transition-all"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {modalMode === 'view' ? 'View Supplier' : modalMode === 'edit' ? 'Edit Supplier' : 'Add Supplier'}
+              </h2>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-6 h-6" strokeWidth={1.5} />
+              </button>
+            </div>
+
+            {modalMode === 'view' ? (
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Company Name</label>
+                  <p className="text-gray-900 font-medium">{selectedSupplier?.companyName}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Contact Person</label>
+                  <p className="text-gray-900 font-medium">{selectedSupplier?.contactPerson || '-'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                  <p className="text-gray-900 font-medium">{selectedSupplier?.email || '-'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Phone</label>
+                  <p className="text-gray-900 font-medium">{selectedSupplier?.phone || '-'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Address</label>
+                  <p className="text-gray-900 font-medium">{selectedSupplier?.address || '-'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Status</label>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold border ${
+                    selectedSupplier?.status === 'active' 
+                      ? 'bg-purple-50 text-purple-700 border-purple-200' 
+                      : 'bg-gray-50 text-gray-700 border-gray-200'
+                  }`}>
+                    {selectedSupplier?.status?.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Company Name <span className="text-pink-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.companyName}
+                    onChange={(e) => handleInputChange('companyName', e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Contact Person</label>
+                  <input
+                    type="text"
+                    value={formData.contactPerson}
+                    onChange={(e) => handleInputChange('contactPerson', e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Email <span className="text-pink-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    placeholder="example@company.com"
+                    className={`w-full px-3 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm ${
+                      formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+                        ? 'border-pink-500'
+                        : 'border-gray-300'
+                    }`}
+                  />
+                  {formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) && (
+                    <p className="text-pink-600 text-xs mt-1 font-medium">Please enter a valid email address.</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Phone <span className="text-pink-500">*</span>
+                  </label>
+                  <div className="flex items-center">
+                    <span className="px-3 py-2.5 bg-gray-100 border border-gray-300 rounded-l-xl text-gray-700 select-none font-medium text-sm">
+                      +82
+                    </span>
+                    <input
+                      type="tel"
+                      value={formData.phone.replace(/^\+82/, '')}
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/\D/g, '');
+                        if (value.length > 10) value = value.slice(0, 10);
+                        handleInputChange('phone', `+82${value}`);
+                      }}
+                      placeholder="Enter phone number"
+                      className={`flex-1 px-3 py-2.5 border rounded-r-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm ${
+                        formData.phone && !/^\+82\d{8,10}$/.test(formData.phone)
+                          ? 'border-pink-500'
+                          : 'border-gray-300'
+                      }`}
+                    />
+                  </div>
+                  {formData.phone && !/^\+82\d{8,10}$/.test(formData.phone) && (
+                    <p className="text-pink-600 text-xs mt-1 font-medium">
+                      Must contain 8–10 digits after +82.
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Address</label>
+                  <textarea
+                    value={formData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => handleInputChange('status', e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm bg-white"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+                <div className="flex gap-3 justify-end pt-4">
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-medium text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-md transition-all font-medium text-sm"
+                  >
+                    {modalMode === 'add' ? 'Add Supplier' : 'Update Supplier'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

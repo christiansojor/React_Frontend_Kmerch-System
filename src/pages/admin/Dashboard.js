@@ -1,147 +1,456 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, ShoppingCart, Package, TrendingUp, DollarSign, ArrowUp, ArrowDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-console.log("AdminDashboard mounted");
+import { 
+  DollarSign, ArrowUp, ArrowDown, ShoppingCart, Package,
+  Clock, FileText, Send, TrendingUp, AlertCircle, Sparkles,
+  Box, Eye, Search, Filter
+} from 'lucide-react';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState([
-    { label: 'Total Revenue', value: '₱1,234,567', change: '+12.5%', positive: true, icon: DollarSign, color: 'bg-emerald-500' },
-    { label: 'Active Users', value: '8,456', change: '+8.2%', positive: true, icon: Users, color: 'bg-blue-500' },
-    { label: 'Total Orders', value: '2,341', change: '+15.3%', positive: true, icon: ShoppingCart, color: 'bg-purple-500' },
-    { label: 'Products Listed', value: '456', change: '-2.1%', positive: false, icon: Package, color: 'bg-orange-500' }
-  ]);
+  const BASE_URL = 'http://127.0.0.1:8000';
+  
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    pendingOrders: 0,
+    totalOrders: 0,
+    pendingTrades: 0,
+    lowStockCount: 0,
+    stockRequestsCount: 0
+  });
+  
+  const [recentProducts, setRecentProducts] = useState([]);
+  const [lowStockProducts, setLowStockProducts] = useState([]);
+  const [stockRequests, setStockRequests] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
-  const recentOrders = [
-    { id: '#ORD-001', customer: 'Kim Sunoo', item: 'BTS - BE Album', amount: '₱1,250', status: 'Completed', date: '2025-09-28' },
-    { id: '#ORD-002', customer: 'Park Jimin', item: 'BLACKPINK Photocard Set', amount: '₱2,100', status: 'Processing', date: '2025-09-28' },
-    { id: '#ORD-003', customer: 'Lee Minho', item: 'Stray Kids Lightstick', amount: '₱3,500', status: 'Shipped', date: '2025-09-27' },
-    { id: '#ORD-004', customer: 'Choi Yuna', item: 'TWICE Poster Collection', amount: '₱850', status: 'Pending', date: '2025-09-27' },
-    { id: '#ORD-005', customer: 'Jung Hoseok', item: 'EXO Trading Cards', amount: '₱1,750', status: 'Completed', date: '2025-09-26' }
-  ];
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'Completed': return 'bg-green-100 text-green-800';
-      case 'Processing': return 'bg-blue-100 text-blue-800';
-      case 'Shipped': return 'bg-purple-100 text-purple-800';
-      case 'Pending': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem('token') || '';
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+
+      // Fetch products
+      const productsResponse = await fetch(`${BASE_URL}/api/products`, { headers });
+      const productsData = await productsResponse.json();
+      
+      // Sort by ID descending to get recent products
+      const sortedProducts = [...productsData].sort((a, b) => b.id - a.id);
+      const recentProds = sortedProducts.slice(0, 5);
+      
+      // Filter low stock products (stock < 10)
+      const lowStock = productsData.filter(p => (p.stockQuantity || 0) < 10).slice(0, 5);
+      
+      // Fetch stock requests
+      const stockReqResponse = await fetch(`${BASE_URL}/api/stock-requests`, { headers });
+      const stockReqData = await stockReqResponse.json();
+      
+      // Sort stock requests by date (most recent first)
+      const sortedRequests = [...stockReqData].sort((a, b) => 
+        new Date(b.requestDate || b.createdAt) - new Date(a.requestDate || a.createdAt)
+      );
+
+      setStats({
+        totalProducts: productsData.length,
+        pendingOrders: 0,
+        totalOrders: 0,
+        pendingTrades: 0,
+        lowStockCount: lowStock.length,
+        stockRequestsCount: stockReqData.length
+      });
+      
+      setRecentProducts(recentProds);
+      setLowStockProducts(lowStock);
+      setStockRequests(sortedRequests);
+      
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    return `${BASE_URL}${imagePath}`;
+  };
+
+  const getStatusColor = (status) => {
+    switch(status?.toLowerCase()) {
+      case 'completed':
+      case 'accepted': 
+        return 'bg-purple-50 text-purple-700 border-purple-200';
+      case 'processing':
+      case 'pending': 
+        return 'bg-pink-50 text-pink-700 border-pink-200';
+      case 'shipped': 
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'declined':
+      case 'rejected': 
+        return 'bg-gray-100 text-gray-600 border-gray-300';
+      default: 
+        return 'bg-gray-50 text-gray-600 border-gray-200';
+    }
+  };
+
+  const filteredRequests = stockRequests.filter(request => {
+    const matchesSearch = 
+      (request.product?.name || request.productName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (request.supplier?.name || request.supplierName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.id.toString().includes(searchTerm);
+    
+    const matchesStatus = statusFilter === 'all' || 
+      (request.status?.toLowerCase() || 'pending') === statusFilter.toLowerCase();
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  const StatCard = ({ icon: Icon, title, value, subtitle, color }) => (
+    <div className="relative bg-white rounded-2xl p-5 border border-gray-200 hover:border-gray-300 transition-all duration-200 overflow-hidden group">
+      <div className={`absolute top-0 right-0 w-24 h-24 ${color} opacity-5 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500`}></div>
+      <div className="relative">
+        <div className={`inline-flex p-2.5 rounded-xl ${color} bg-opacity-10 mb-4`}>
+          <Icon className={`w-5 h-5 ${color.replace('bg-', 'text-')}`} strokeWidth={1.5} />
+        </div>
+        <div className="space-y-1">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{title}</p>
+          <p className="text-3xl font-bold text-gray-900">{value}</p>
+          <p className="text-xs text-gray-400 font-medium">{subtitle}</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-2 border-purple-300 border-t-purple-600 mb-4"></div>
+          <p className="text-gray-600 font-medium text-lg">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="px-6 py-4 flex items-center justify-between">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="px-6 py-5 flex items-center justify-between max-w-[1600px] mx-auto">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              K-pop Admin Dashboard
-            </h1>
-            <p className="text-gray-600 mt-1">Welcome back, Admin!</p>
+            <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-1">
+              Dashboard
+            </h2>
+            <p className="text-gray-500 font-medium text-sm">Manage your K-pop merch empire</p>
           </div>
-          <button className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg">
-            Export Report
-          </button>
+          <div className="flex items-center gap-3">
+            <button className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 flex items-center gap-2 font-medium text-sm">
+              <FileText className="w-4 h-4" strokeWidth={1.5} />
+              Export
+            </button>
+            <button
+              onClick={() => navigate('/admin/supplier/stock-request')}
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-md transition-all duration-200 flex items-center gap-2 font-medium text-sm"
+            >
+              <Send className="w-4 h-4" strokeWidth={1.5} />
+              New Request
+            </button>
+          </div>
         </div>
       </header>
 
-      <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          {stats.map((stat, idx) => {
-            const Icon = stat.icon;
-            return (
-              <div key={idx} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-100">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="text-gray-600 text-sm font-medium mb-2">{stat.label}</p>
-                    <h3 className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</h3>
-                    <div className="flex items-center gap-1">
-                      {stat.positive ? <ArrowUp className="w-4 h-4 text-green-600" /> : <ArrowDown className="w-4 h-4 text-red-600" />}
-                      <span className={`text-sm font-semibold ${stat.positive ? 'text-green-600' : 'text-red-600'}`}>{stat.change}</span>
-                      <span className="text-gray-500 text-sm">vs last month</span>
-                    </div>
+      {/* Content */}
+      <div className="p-6 max-w-[1600px] mx-auto">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <StatCard 
+            icon={Package}
+            title="Total Products"
+            value={stats.totalProducts}
+            subtitle="Active merchandise"
+            color="bg-purple-500"
+          />
+          <StatCard 
+            icon={ShoppingCart}
+            title="Pending Orders"
+            value={stats.pendingOrders}
+            subtitle="Coming soon"
+            color="bg-pink-500"
+          />
+          <StatCard 
+            icon={DollarSign}
+            title="Total Orders"
+            value={stats.totalOrders}
+            subtitle="Coming soon"
+            color="bg-blue-500"
+          />
+          <StatCard 
+            icon={TrendingUp}
+            title="Pending Trades"
+            value={stats.pendingTrades}
+            subtitle="Coming soon"
+            color="bg-purple-500"
+          />
+        </div>
+
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* Recently Added Products - Left */}
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white bg-opacity-20 rounded-lg backdrop-blur-sm">
+                    <Sparkles className="w-5 h-5 text-white" strokeWidth={1.5} />
                   </div>
-                  <div className={`${stat.color} p-3 rounded-xl`}>
-                    <Icon className="w-6 h-6 text-white" />
-                  </div>
+                  <h3 className="text-xl font-bold text-white">Recently Added</h3>
                 </div>
+                <button 
+                  onClick={() => navigate('/admin/products')}
+                  className="px-3 py-1.5 bg-white bg-opacity-20 backdrop-blur-sm text-white rounded-lg hover:bg-opacity-30 transition-all font-medium text-sm"
+                >
+                  View All →
+                </button>
               </div>
-            );
-          })}
+            </div>
+            <div className="p-5">
+              {recentProducts.length === 0 ? (
+                <div className="text-center py-12">
+                  <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" strokeWidth={1.5} />
+                  <p className="text-gray-400 font-medium">No products yet</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {recentProducts.map((product, index) => (
+                    <div key={product.id} className="relative flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-transparent hover:border-gray-200">
+                      {/* NEW Badge for most recent */}
+                      {index === 0 && (
+                        <div className="absolute -top-1 -left-1 z-10">
+                          <div className="relative">
+                            <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full blur-sm opacity-75 animate-pulse"></div>
+                            <div className="relative px-2 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center gap-1">
+                              <Sparkles className="w-3 h-3 text-white" strokeWidth={2} />
+                              <span className="text-[10px] font-bold text-white uppercase tracking-wide">New</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {getImageUrl(product.image) ? (
+                        <img
+                          src={getImageUrl(product.image)}
+                          alt={product.name}
+                          className="w-14 h-14 object-cover rounded-lg border border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-14 h-14 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg flex items-center justify-center border border-gray-200">
+                          <Package className="w-6 h-6 text-purple-400" strokeWidth={1.5} />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-900 truncate text-sm">{product.name}</h4>
+                        <p className="text-xs text-gray-500 font-medium mt-0.5">{product.category || 'No category'}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-sm text-purple-600">₱{product.price?.toFixed(2)}</p>
+                        <p className="text-xs text-gray-500 font-medium mt-0.5">Stock: {product.stockQuantity || 0}</p>
+                      </div>
+                      <button
+                        onClick={() => navigate(`/admin/products/view/${product.id}`)}
+                        className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-md transition-all"
+                      >
+                        <Eye className="w-4 h-4" strokeWidth={1.5} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Low Stock Alert - Right */}
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-pink-500 to-purple-500 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white bg-opacity-20 rounded-lg backdrop-blur-sm">
+                    <AlertCircle className="w-5 h-5 text-white" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">Low Stock Alert</h3>
+                </div>
+                <span className="px-3 py-1.5 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg text-sm font-bold text-white">
+                  {lowStockProducts.length} items
+                </span>
+              </div>
+            </div>
+            <div className="p-5">
+              {lowStockProducts.length === 0 ? (
+                <div className="text-center py-12">
+                  <Box className="w-12 h-12 text-gray-300 mx-auto mb-3" strokeWidth={1.5} />
+                  <p className="text-gray-400 font-medium">All products well stocked! 🎉</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {lowStockProducts.map((product) => (
+                    <div key={product.id} className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-transparent hover:border-gray-200">
+                      {getImageUrl(product.image) ? (
+                        <img
+                          src={getImageUrl(product.image)}
+                          alt={product.name}
+                          className="w-14 h-14 object-cover rounded-lg border border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-14 h-14 bg-gradient-to-br from-pink-100 to-purple-100 rounded-lg flex items-center justify-center border border-gray-200">
+                          <Package className="w-6 h-6 text-pink-400" strokeWidth={1.5} />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-900 truncate text-sm">{product.name}</h4>
+                        <p className="text-xs text-gray-500 font-medium mt-0.5">{product.category || 'No category'}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg font-bold text-sm ${
+                          product.stockQuantity === 0 
+                            ? 'bg-pink-50 text-pink-700 border border-pink-200' 
+                            : 'bg-purple-50 text-purple-700 border border-purple-200'
+                        }`}>
+                          <div className={`w-2 h-2 rounded-full ${
+                            product.stockQuantity === 0 ? 'bg-pink-500 animate-pulse' : 'bg-purple-500'
+                          }`}></div>
+                          <span>{product.stockQuantity || 0}</span>
+                        </div>
+                        <p className="text-xs text-gray-500 font-medium mt-1">
+                          {product.stockQuantity === 0 ? 'Out of Stock' : 'Low Stock'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => navigate(`/admin/products/view/${product.id}`)}
+                        className="p-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:shadow-md transition-all"
+                      >
+                        <Eye className="w-4 h-4" strokeWidth={1.5} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Recent Orders */}
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-100 mb-6">
-          <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900">Recent Orders</h2>
-            <button className="text-purple-600 hover:text-purple-700 font-medium text-sm">
-              View All
-            </button>
+        {/* Stock Requests Table - Full Width */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-pink-500 to-purple-500 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white bg-opacity-20 rounded-lg backdrop-blur-sm">
+                  <Clock className="w-5 h-5 text-white" strokeWidth={1.5} />
+                </div>
+                <h3 className="text-xl font-bold text-white">Stock Requests</h3>
+              </div>
+              <span className="px-3 py-1.5 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg text-sm font-bold text-white">
+                {filteredRequests.length} of {stockRequests.length} requests
+              </span>
+            </div>
           </div>
-          <div className="overflow-x-auto p-6">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Order ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Item</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {recentOrders.map((order, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{order.id}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{order.customer}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{order.item}</td>
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">{order.amount}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                        {order.status}
-                      </span>
-                    </td>
+
+          {/* Search and Filter Bar */}
+          <div className="p-5 border-b border-gray-200 bg-gray-50">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" strokeWidth={1.5} />
+                <input
+                  type="text"
+                  placeholder="Search by product, supplier, or ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                />
+              </div>
+              <div className="relative">
+                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" strokeWidth={1.5} />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="pl-10 pr-10 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none bg-white cursor-pointer text-sm font-medium"
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="accepted">Accepted</option>
+                  <option value="completed">Completed</option>
+                  <option value="declined">Declined</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            {filteredRequests.length === 0 ? (
+              <div className="text-center py-16">
+                <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" strokeWidth={1.5} />
+                <p className="text-gray-400 font-medium text-lg">
+                  {searchTerm || statusFilter !== 'all' ? 'No matching requests found' : 'No stock requests yet'}
+                </p>
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">ID</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Product</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Supplier</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Quantity</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredRequests.map((request) => (
+                    <tr key={request.id} className="hover:bg-blue-50 transition-colors duration-150">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="font-mono text-sm font-bold text-blue-600">#{request.id}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-semibold text-gray-900">{request.product?.name || request.productName || 'N/A'}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-600 font-medium">{request.supplier?.name || request.supplierName || 'N/A'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm font-bold text-gray-900">{request.quantity || 0}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold border ${getStatusColor(request.status)}`}>
+                          {request.status?.toUpperCase() || 'PENDING'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-600 font-medium">
+                          {request.requestDate ? new Date(request.requestDate).toLocaleDateString() : 
+                           request.createdAt ? new Date(request.createdAt).toLocaleDateString() : 'N/A'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <button
-            onClick={() => navigate('/admin/products')}
-            className="bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-4"
-          >
-            <Package className="w-8 h-8" />
-            <div className="text-left">
-              <h3 className="font-bold text-lg">Manage Products</h3>
-              <p className="text-purple-100 text-sm">Create, edit, and delete products</p>
-            </div>
-          </button>
-
-          <button className="bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-4">
-            <Users className="w-8 h-8" />
-            <div className="text-left">
-              <h3 className="font-bold text-lg">Manage Users</h3>
-              <p className="text-pink-100 text-sm">View all customers</p>
-            </div>
-          </button>
-
-          <button className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-4">
-            <TrendingUp className="w-8 h-8" />
-            <div className="text-left">
-              <h3 className="font-bold text-lg">View Analytics</h3>
-              <p className="text-blue-100 text-sm">Detailed reports</p>
-            </div>
-          </button>
         </div>
       </div>
     </div>
   );
 };
 
-export default AdminDashboard;
+export default AdminDashboard;  

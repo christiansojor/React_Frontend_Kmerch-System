@@ -1,31 +1,83 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Save } from 'lucide-react';
+import { ArrowLeft, Package, Save, Building2, Users, Upload, X, Sparkles } from 'lucide-react';
 
 const EditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [product, setProduct] = useState({ name: '', description: '', price: '', image: '' });
+  
+  const [product, setProduct] = useState({
+    name: '',
+    description: '',
+    price: '',
+    category: '',
+    groupId: '',
+    stockQuantity: ''
+  });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [existingImage, setExistingImage] = useState('');
+  const [groups, setGroups] = useState([]);
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingGroups, setLoadingGroups] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const categories = ['Clothing', 'Accessories', 'Posters', 'Albums', 'Lightsticks'];
 
   useEffect(() => {
-    const fetchProduct = async () => {
-
+    const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
+        
+        // Fetch groups
+        const groupsRes = await fetch('http://127.0.0.1:8000/api/groups', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (groupsRes.ok) {
+          const groupsData = await groupsRes.json();
+          setGroups(groupsData);
+        }
+        
+        setLoadingGroups(false);
+        
+        // Fetch product
         const res = await fetch(`http://127.0.0.1:8000/api/products/${id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
+        
         if (!res.ok) throw new Error('Failed to fetch product');
+        
         const data = await res.json();
-        setProduct(data);
+        setProduct({
+          name: data.name || '',
+          description: data.description || '',
+          price: data.price || '',
+          category: data.category || '',
+          groupId: data.groupId || data.group?.id || '',
+          stockQuantity: data.stockQuantity || ''
+        });
+        
+        // Set existing image
+        if (data.image) {
+          setExistingImage(data.image);
+        }
+        
+        // Set supplier if group has one
+        if (data.group?.supplier) {
+          setSelectedSupplier(data.group.supplier);
+        }
+        
       } catch (err) {
         console.error(err);
+        alert('Failed to load product');
       } finally {
         setLoading(false);
       }
     };
-    fetchProduct();
+    
+    fetchData();
   }, [id]);
 
   const handleChange = (e) => {
@@ -33,204 +85,382 @@ const EditProduct = () => {
     setProduct({ ...product, [name]: value });
   };
 
-  const handleSubmit = async (e) => {
-
-    e.preventDefault();
-
-    const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  // <-- Add this line
-  console.log(product);  // This will log the entire product object, including image
-
-  try {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`http://127.0.0.1:8000/api/products/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(product)
-    });
-    if (!res.ok) throw new Error('Failed to update product');
-    alert('Product updated!');
-    navigate('/admin/products');
-  } catch (err) {
-    console.error(err);
-    alert('Failed to update product');
-  }
-};
-
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://127.0.0.1:8000/api/products/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(product)
-      });
-      if (!res.ok) throw new Error('Failed to update product');
-      alert('Product updated!');
-      navigate('/admin/products');
-    } catch (err) {
-      console.error(err);
-      alert('Failed to update product');
+  const handleGroupChange = (e) => {
+    const groupId = e.target.value;
+    setProduct({ ...product, groupId });
+    
+    const selectedGroup = groups.find(g => g.id === parseInt(groupId));
+    if (selectedGroup && selectedGroup.supplier) {
+      setSelectedSupplier(selectedGroup.supplier);
+    } else {
+      setSelectedSupplier(null);
     }
   };
 
-  if (loading) return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
-      <div className="text-center">
-        <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-purple-500 border-t-transparent mb-4"></div>
-        <p className="text-gray-600 font-medium text-lg">Loading product...</p>
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        alert('Please select a valid image file (JPG, PNG, GIF, or WEBP)');
+        return;
+      }
+      
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        return;
+      }
+      
+      setImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Determine if we need multipart/form-data or JSON
+      const hasNewImage = imageFile !== null;
+      
+      let response;
+      
+      if (hasNewImage) {
+        // Use FormData for file upload
+        const formData = new FormData();
+        formData.append('name', product.name);
+        formData.append('description', product.description);
+        formData.append('price', parseFloat(product.price));
+        formData.append('category', product.category);
+        formData.append('groupId', parseInt(product.groupId));
+        formData.append('stockQuantity', parseInt(product.stockQuantity) || 0);
+        formData.append('image', imageFile);
+        
+        response = await fetch(`http://127.0.0.1:8000/api/products/${id}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+      } else {
+        // Use JSON for updates without image change
+        const updateData = {
+          name: product.name,
+          description: product.description,
+          price: parseFloat(product.price),
+          category: product.category,
+          groupId: parseInt(product.groupId),
+          stockQuantity: parseInt(product.stockQuantity) || 0
+        };
+        
+        response = await fetch(`http://127.0.0.1:8000/api/products/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(updateData)
+        });
+      }
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update product');
+      }
+      
+      alert('Product updated successfully!');
+      navigate('/admin/products');
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Failed to update product');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-purple-500 border-t-transparent mb-4"></div>
+          <p className="text-gray-600 font-medium text-lg">Loading product...</p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-8">
-      <div className="max-w-2xl mx-auto">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate('/admin/products')}
-          className="group flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 rounded-xl shadow-md hover:shadow-lg transition-all border border-gray-200 mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          <span className="font-medium">Back to Products</span>
-        </button>
-
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl shadow-lg">
-            <Package className="w-7 h-7 text-white" />
-          </div>
-          <div>
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Edit Product
-            </h2>
-            <p className="text-gray-600 text-sm mt-1">Update product information</p>
-          </div>
-        </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-6">
+      <div className="max-w-[1200px] mx-auto">
         {/* Form Card */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/50 p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white bg-opacity-20 rounded-lg backdrop-blur-sm">
+                <Package className="w-5 h-5 text-white" strokeWidth={1.5} />
+              </div>
+              <h3 className="text-xl font-bold text-white">Edit Product</h3>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Product Name */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
-                Product Name
+              <label className="block text-gray-700 font-semibold mb-2 text-sm">
+                Product Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 name="name"
                 value={product.name}
                 onChange={handleChange}
-                className="w-full border-2 border-gray-200 rounded-xl p-4 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all outline-none text-gray-900 font-medium"
-                placeholder="Enter product name"
                 required
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
+                placeholder="Enter product name"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
-                Description
+              <label className="block text-gray-700 font-semibold mb-2 text-sm">
+                Description <span className="text-red-500">*</span>
               </label>
               <textarea
                 name="description"
                 value={product.description}
                 onChange={handleChange}
-                rows="4"
-                className="w-full border-2 border-gray-200 rounded-xl p-4 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all outline-none text-gray-900 resize-none"
-                placeholder="Enter product description"
                 required
+                rows="4"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm resize-none"
+                placeholder="Enter product description"
               />
             </div>
 
-            {/* Price */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
-                Price (₱)
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold text-lg">
-                  ₱
-                </span>
+            {/* Category and Group Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Category */}
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2 text-sm">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="category"
+                  value={product.category}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm bg-white"
+                >
+                  <option value="">Select category</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Group Selection */}
+              <div>
+                <label className="flex items-center gap-2 text-gray-700 font-semibold mb-2 text-sm">
+                  <Users className="w-4 h-4" strokeWidth={1.5} />
+                  K-Pop Group <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="groupId"
+                  value={product.groupId}
+                  onChange={handleGroupChange}
+                  required
+                  disabled={loadingGroups}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">
+                    {loadingGroups ? 'Loading groups...' : 'Select a group'}
+                  </option>
+                  {groups.map(g => (
+                    <option key={g.id} value={g.id}>
+                      {g.name} {g.debutYear && `(${g.debutYear})`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Auto-filled Supplier Display */}
+            {selectedSupplier && (
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-purple-500 rounded-lg">
+                    <Building2 className="w-4 h-4 text-white" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">
+                        Entertainment Company
+                      </span>
+                      <span className="px-2 py-0.5 bg-purple-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" strokeWidth={1.5} />
+                        Auto-Selected
+                      </span>
+                    </div>
+                    <h4 className="text-base font-bold text-gray-900 mb-1">
+                      {selectedSupplier.companyName || selectedSupplier.name}
+                    </h4>
+                    {selectedSupplier.email && (
+                      <p className="text-sm text-gray-600">📧 {selectedSupplier.email}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Price and Stock Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Price */}
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2 text-sm">
+                  Price <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold text-sm">₱</span>
+                  <input
+                    type="number"
+                    name="price"
+                    value={product.price}
+                    onChange={handleChange}
+                    required
+                    className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
+                    placeholder="0.00"
+                    step="0.01"
+                  />
+                </div>
+              </div>
+
+              {/* Stock Quantity */}
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2 text-sm">
+                  Stock Quantity
+                </label>
                 <input
                   type="number"
-                  name="price"
-                  value={product.price}
+                  name="stockQuantity"
+                  value={product.stockQuantity}
                   onChange={handleChange}
-                  className="w-full border-2 border-gray-200 rounded-xl p-4 pl-10 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all outline-none text-gray-900 font-medium"
-                  placeholder="0.00"
-                  step="0.01"
-                  required
+                  min="0"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
+                  placeholder="Enter stock quantity"
                 />
               </div>
             </div>
 
-            {/* Image URL */}
+            {/* Image Upload */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
-                Image URL
+              <label className="flex items-center gap-2 text-gray-700 font-semibold mb-2 text-sm">
+                <Upload className="w-4 h-4" strokeWidth={1.5} />
+                Product Image
               </label>
-              <input
-                type="text"
-                name="image"
-                value={product.image}
-                onChange={handleChange}
-                className="w-full border-2 border-gray-200 rounded-xl p-4 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all outline-none text-gray-900 font-medium"
-                placeholder="Enter image URL"
-              />
-              {product.image && (
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="mt-4 w-40 h-40 object-cover rounded-xl border border-gray-200 shadow-sm"
-                />
+              
+              {!imagePreview && existingImage && (
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600 mb-2 font-medium">Current Image:</p>
+                  <img
+                    src={`http://127.0.0.1:8000${existingImage}`}
+                    alt={product.name}
+                    className="w-full h-64 object-cover rounded-xl border border-gray-200"
+                  />
+                </div>
+              )}
+              
+              {!imagePreview ? (
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition-colors">
+                  <input
+                    type="file"
+                    id="image-upload"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="image-upload"
+                    className="cursor-pointer flex flex-col items-center gap-3"
+                  >
+                    <div className="p-4 bg-purple-100 rounded-full">
+                      <Upload className="w-8 h-8 text-purple-600" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <p className="text-gray-700 font-semibold mb-1">
+                        {existingImage ? 'Click to replace image' : 'Click to upload product image'}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        JPG, PNG, GIF or WEBP (Max 5MB)
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              ) : (
+                <div className="relative">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-64 object-cover rounded-xl border border-gray-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute top-3 right-3 p-2 bg-gradient-to-r from-pink-500 to-red-500 hover:shadow-md text-white rounded-lg transition-all"
+                  >
+                    <X className="w-4 h-4" strokeWidth={1.5} />
+                  </button>
+                  <div className="mt-2 text-sm text-gray-600 font-medium">
+                    {imageFile.name} ({(imageFile.size / 1024).toFixed(2)} KB)
+                  </div>
+                </div>
               )}
             </div>
 
             {/* Buttons */}
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-2">
               <button
                 type="submit"
-                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 font-bold text-lg"
+                disabled={saving || loadingGroups}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-md transition-all duration-200 font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Save className="w-5 h-5" />
-                Save Changes
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" strokeWidth={1.5} />
+                    Save Changes
+                  </>
+                )}
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/admin/products')}
-                className="px-6 py-4 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium"
+                disabled={saving}
+                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
             </div>
           </form>
-        </div>
-
-        {/* Info Card */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-2xl p-4">
-          <div className="flex gap-3">
-            <div className="flex-shrink-0">
-              <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-blue-900">
-                Editing Product ID: <span className="font-bold">#{id}</span>
-              </p>
-              <p className="text-xs text-blue-700 mt-1">
-                Make sure all information is accurate before saving
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

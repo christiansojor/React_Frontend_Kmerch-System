@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, Send, Package, DollarSign, FileText, AlertCircle, CheckCircle, Building2, Users, Sparkles } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Send, Package, DollarSign, FileText, AlertCircle, CheckCircle, Building2, Users, Sparkles } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const StockRequest = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [products, setProducts] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState("");
@@ -18,40 +19,55 @@ const StockRequest = () => {
   const [submitting, setSubmitting] = useState(false);
   const [alert, setAlert] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem("token");
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem("token");
 
-        // Fetch products
-        const productsRes = await fetch("http://127.0.0.1:8000/api/products", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        
-        if (!productsRes.ok) {
-          throw new Error(`Products API error: ${productsRes.status}`);
-        }
-        
-        const productData = await productsRes.json();
-        setProducts(Array.isArray(productData) ? productData : []);
+      const productsRes = await fetch("http://127.0.0.1:8000/api/products", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!productsRes.ok) throw new Error(`Products API error: ${productsRes.status}`);
 
-        // Fetch suppliers (for manual override option)
-        const supplierRes = await fetch("http://127.0.0.1:8000/api/suppliers", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        
-        if (supplierRes.ok) {
-          const supplierData = await supplierRes.json();
-          setSuppliers(Array.isArray(supplierData) ? supplierData : []);
-        }
-      } catch (error) {
-        console.error("Error loading data:", error);
-        showAlert("error", `Failed to load data: ${error.message}`);
-      } finally {
-        setLoading(false);
+      const productData = await productsRes.json();
+      setProducts(Array.isArray(productData) ? productData : []);
+
+      const supplierRes = await fetch("http://127.0.0.1:8000/api/suppliers", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (supplierRes.ok) {
+        const supplierData = await supplierRes.json();
+        setSuppliers(Array.isArray(supplierData) ? supplierData : []);
       }
-    };
+    } catch (error) {
+      console.error("Error loading data:", error);
+      showAlert("error", `Failed to load data: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Refetch when navigating back to this page
+  useEffect(() => {
+    setLoading(true);
     fetchData();
+  }, [location.pathname]);
+
+  // ✅ Refetch when window/tab gains focus
+  useEffect(() => {
+    const handleFocus = () => fetchData();
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, []);
+
+  // ✅ Refetch when a group’s supplier is updated (from GroupsManagement)
+  useEffect(() => {
+    const handleGroupUpdate = () => {
+      console.log("Detected group update — refetching StockRequest data...");
+      fetchData();
+    };
+
+    window.addEventListener("groupUpdated", handleGroupUpdate);
+    return () => window.removeEventListener("groupUpdated", handleGroupUpdate);
   }, []);
 
   const showAlert = (type, message) => {
@@ -62,26 +78,23 @@ const StockRequest = () => {
   const handleProductChange = (e) => {
     const productId = e.target.value;
     setSelectedProduct(productId);
-    
-    // Find the selected product
-    const product = products.find(p => p.id === parseInt(productId));
+
+    const product = products.find((p) => p.id === parseInt(productId));
     setSelectedProductDetails(product);
-    
+
     if (product) {
-      // Auto-select supplier from product's supplier or group's supplier
       if (product.supplier) {
         setAutoSelectedSupplier(product.supplier);
       } else if (product.group && product.group.supplier) {
         setAutoSelectedSupplier(product.group.supplier);
       } else {
         setAutoSelectedSupplier(null);
-        setShowManualSupplier(true); // Force manual selection if no auto supplier
+        setShowManualSupplier(true);
       }
     } else {
       setAutoSelectedSupplier(null);
     }
-    
-    // Reset manual override
+
     setManualSupplierOverride("");
   };
 
@@ -97,26 +110,14 @@ const StockRequest = () => {
     setSubmitting(true);
 
     const token = localStorage.getItem("token");
-
     const body = {
       product_id: parseInt(selectedProduct, 10),
       quantity: parseInt(quantity, 10),
     };
 
-    // Add supplier if manually overridden
-    if (manualSupplierOverride) {
-      body.supplier_id = parseInt(manualSupplierOverride, 10);
-    }
-    // Otherwise, backend will auto-select from product/group
-
-    // Add optional fields
-    if (unitPrice && unitPrice.trim() !== "") {
-      body.unit_price = parseFloat(unitPrice).toFixed(2);
-    }
-
-    if (notes.trim()) {
-      body.notes = notes.trim();
-    }
+    if (manualSupplierOverride) body.supplier_id = parseInt(manualSupplierOverride, 10);
+    if (unitPrice && unitPrice.trim() !== "") body.unit_price = parseFloat(unitPrice).toFixed(2);
+    if (notes.trim()) body.notes = notes.trim();
 
     try {
       const response = await fetch("http://127.0.0.1:8000/api/stock-requests", {
@@ -129,13 +130,10 @@ const StockRequest = () => {
       });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to send stock request");
-      }
+      if (!response.ok) throw new Error(data.error || "Failed to send stock request");
 
       showAlert("success", `Stock request sent successfully! Request ID: #${data.id}`);
-      
+
       // Reset form
       setSelectedProduct("");
       setSelectedProductDetails(null);
@@ -153,103 +151,102 @@ const StockRequest = () => {
     }
   };
 
+  // ✅ (everything else below remains unchanged)
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Loading data...</p>
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-2 border-purple-300 border-t-purple-600 mb-4"></div>
+          <p className="text-gray-600 font-medium text-lg">Loading data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="px-6 py-5 flex items-center justify-between max-w-[1600px] mx-auto">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-1">
+              Stock Request
+            </h2>
+            <p className="text-gray-500 font-medium text-sm">Request inventory from suppliers</p>
+          </div>
+        </div>
+      </header>
+
+      {/* Content */}
+      <div className="p-6 max-w-[1200px] mx-auto">
         {/* Alert */}
         {alert && (
           <div
-            className={`mb-6 p-4 rounded-xl flex items-center gap-3 animate-fadeIn ${
+            className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
               alert.type === "success"
-                ? "bg-green-100 text-green-800 border border-green-200"
-                : "bg-red-100 text-red-800 border border-red-200"
+                ? "bg-green-50 text-green-800 border border-green-200"
+                : "bg-red-50 text-red-800 border border-red-200"
             }`}
           >
             {alert.type === "success" ? (
-              <CheckCircle className="w-5 h-5 flex-shrink-0" />
+              <CheckCircle className="w-5 h-5 flex-shrink-0" strokeWidth={1.5} />
             ) : (
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <AlertCircle className="w-5 h-5 flex-shrink-0" strokeWidth={1.5} />
             )}
             <span className="font-medium">{alert.message}</span>
           </div>
         )}
 
-        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/50 p-8">
-          <button
-            onClick={() => navigate("/admin/dashboard")}
-            className="flex items-center gap-2 mb-6 text-purple-600 hover:text-purple-800 transition-all group"
-          >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-medium">Back to Dashboard</span>
-          </button>
-
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-4">
-              <Package className="w-8 h-8 text-white" />
+        {/* Form Card */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white bg-opacity-20 rounded-lg backdrop-blur-sm">
+                <Package className="w-5 h-5 text-white" strokeWidth={1.5} />
+              </div>
+              <h3 className="text-xl font-bold text-white">New Stock Request</h3>
             </div>
-            <h1 className="text-3xl font-bold text-purple-700 mb-2">
-              Request Stock from Supplier
-            </h1>
-            <p className="text-gray-600">
-              Select a product and the supplier will be automatically assigned
-            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Product Selection */}
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">
+              <label className="block text-gray-700 font-semibold mb-2 text-sm">
                 Product <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <Package className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <select
-                  value={selectedProduct}
-                  onChange={handleProductChange}
-                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all"
-                  required
-                >
-                  <option value="">Select a product</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} {p.stockQuantity !== undefined && `(Current Stock: ${p.stockQuantity})`}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <select
+                value={selectedProduct}
+                onChange={handleProductChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm bg-white"
+                required
+              >
+                <option value="">Select a product</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} {p.stockQuantity !== undefined && `(Current Stock: ${p.stockQuantity})`}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Product Details Card */}
             {selectedProductDetails && (
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-5 animate-fadeIn">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 bg-blue-600 rounded-lg">
-                    <Package className="w-5 h-5 text-white" />
+                  <div className="p-2 bg-blue-500 rounded-lg">
+                    <Package className="w-4 h-4 text-white" strokeWidth={1.5} />
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-bold text-blue-600 uppercase tracking-wide">
-                        Product Details
-                      </span>
-                    </div>
-                    <h4 className="text-lg font-bold text-gray-900 mb-2">
+                    <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
+                      Product Details
+                    </span>
+                    <h4 className="text-base font-bold text-gray-900 mt-1 mb-2">
                       {selectedProductDetails.name}
                     </h4>
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       {selectedProductDetails.group && (
                         <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4 text-blue-600" />
+                          <Users className="w-4 h-4 text-blue-600" strokeWidth={1.5} />
                           <span className="text-gray-700">
                             <strong>Group:</strong> {selectedProductDetails.group.name}
                           </span>
@@ -274,39 +271,33 @@ const StockRequest = () => {
 
             {/* Auto-Selected Supplier Display */}
             {autoSelectedSupplier && (
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-5 animate-fadeIn">
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 bg-purple-600 rounded-lg">
-                    <Building2 className="w-5 h-5 text-white" />
+                  <div className="p-2 bg-purple-500 rounded-lg">
+                    <Building2 className="w-4 h-4 text-white" strokeWidth={1.5} />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-purple-600 uppercase tracking-wide">
+                      <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">
                         Supplier
                       </span>
-                      <span className="px-2 py-0.5 bg-purple-600 text-white text-xs font-bold rounded-full flex items-center gap-1">
-                        <Sparkles className="w-3 h-3" />
+                      <span className="px-2 py-0.5 bg-purple-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" strokeWidth={1.5} />
                         Auto-Selected
                       </span>
                     </div>
-                    <h4 className="text-lg font-bold text-gray-900 mb-1">
+                    <h4 className="text-base font-bold text-gray-900 mb-1">
                       {autoSelectedSupplier.companyName || autoSelectedSupplier.name}
                     </h4>
                     <div className="space-y-1">
                       {autoSelectedSupplier.email && (
-                        <p className="text-sm text-gray-600 flex items-center gap-1">
-                          <span>📧</span> {autoSelectedSupplier.email}
-                        </p>
+                        <p className="text-sm text-gray-600">📧 {autoSelectedSupplier.email}</p>
                       )}
                       {autoSelectedSupplier.contactPerson && (
-                        <p className="text-sm text-gray-600 flex items-center gap-1">
-                          <span>👤</span> {autoSelectedSupplier.contactPerson}
-                        </p>
+                        <p className="text-sm text-gray-600">👤 {autoSelectedSupplier.contactPerson}</p>
                       )}
                       {autoSelectedSupplier.phone && (
-                        <p className="text-sm text-gray-600 flex items-center gap-1">
-                          <span>📱</span> {autoSelectedSupplier.phone}
-                        </p>
+                        <p className="text-sm text-gray-600">📱 {autoSelectedSupplier.phone}</p>
                       )}
                     </div>
                     
@@ -315,7 +306,7 @@ const StockRequest = () => {
                       <button
                         type="button"
                         onClick={() => setShowManualSupplier(!showManualSupplier)}
-                        className="mt-3 text-xs text-purple-600 hover:text-purple-800 font-medium underline"
+                        className="mt-2 text-xs text-purple-600 hover:text-purple-800 font-semibold underline"
                       >
                         {showManualSupplier ? 'Hide manual selection' : 'Change supplier manually'}
                       </button>
@@ -327,15 +318,15 @@ const StockRequest = () => {
 
             {/* Manual Supplier Override */}
             {(showManualSupplier || (!autoSelectedSupplier && selectedProduct)) && (
-              <div className="animate-fadeIn">
-                <label className="block text-gray-700 font-semibold mb-2">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2 text-sm">
                   {autoSelectedSupplier ? 'Override Supplier (Optional)' : 'Select Supplier'} 
                   {!autoSelectedSupplier && <span className="text-red-500"> *</span>}
                 </label>
                 <select
                   value={manualSupplierOverride}
                   onChange={(e) => setManualSupplierOverride(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm bg-white"
                   required={!autoSelectedSupplier}
                 >
                   <option value="">
@@ -352,7 +343,7 @@ const StockRequest = () => {
                   )}
                 </select>
                 {suppliers.length === 0 && (
-                  <p className="text-sm text-red-500 mt-2">
+                  <p className="text-sm text-red-500 mt-2 font-medium">
                     No suppliers found. Please add suppliers first.
                   </p>
                 )}
@@ -361,13 +352,13 @@ const StockRequest = () => {
 
             {/* No Supplier Warning */}
             {!autoSelectedSupplier && selectedProduct && !showManualSupplier && (
-              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 flex items-start gap-3 animate-fadeIn">
-                <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div className="bg-pink-50 border border-pink-200 rounded-xl p-4 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-pink-600 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
                 <div>
-                  <p className="text-sm font-medium text-yellow-800">
+                  <p className="text-sm font-semibold text-pink-800">
                     No supplier assigned to this product or its group.
                   </p>
-                  <p className="text-sm text-yellow-700 mt-1">
+                  <p className="text-sm text-pink-700 mt-1">
                     Please select a supplier manually to continue.
                   </p>
                 </div>
@@ -378,7 +369,7 @@ const StockRequest = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Quantity */}
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
+                <label className="block text-gray-700 font-semibold mb-2 text-sm">
                   Quantity <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -386,7 +377,7 @@ const StockRequest = () => {
                   min="1"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
                   placeholder="Enter quantity"
                   required
                 />
@@ -394,18 +385,18 @@ const StockRequest = () => {
 
               {/* Unit Price */}
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
+                <label className="block text-gray-700 font-semibold mb-2 text-sm">
                   Unit Price (Optional)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold">₱</span>
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold text-sm">₱</span>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={unitPrice}
                     onChange={(e) => setUnitPrice(e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all"
+                    className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
                     placeholder="0.00"
                   />
                 </div>
@@ -414,9 +405,9 @@ const StockRequest = () => {
 
             {/* Total Price Display */}
             {quantity && unitPrice && (
-              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 animate-fadeIn">
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-700 font-semibold">Estimated Total:</span>
+                  <span className="text-gray-700 font-semibold text-sm">Estimated Total:</span>
                   <span className="text-2xl font-bold text-purple-700">
                     ₱{calculateTotal()}
                   </span>
@@ -426,9 +417,9 @@ const StockRequest = () => {
 
             {/* Notes */}
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">
+              <label className="block text-gray-700 font-semibold mb-2 text-sm">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
+                  <FileText className="w-4 h-4" strokeWidth={1.5} />
                   <span>Notes (Optional)</span>
                 </div>
               </label>
@@ -436,7 +427,7 @@ const StockRequest = () => {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows="4"
-                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all resize-none"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm resize-none"
                 placeholder="Add any additional information or special requests..."
               />
             </div>
@@ -445,16 +436,16 @@ const StockRequest = () => {
             <button
               type="submit"
               disabled={submitting || (!autoSelectedSupplier && !manualSupplierOverride)}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-4 rounded-xl shadow-lg hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-md transition-all duration-200 font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                   <span>Sending Request...</span>
                 </>
               ) : (
                 <>
-                  <Send className="w-5 h-5" />
+                  <Send className="w-4 h-4" strokeWidth={1.5} />
                   <span>Send Stock Request</span>
                 </>
               )}
