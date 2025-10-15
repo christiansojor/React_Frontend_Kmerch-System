@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Eye, Edit2, Trash2, Plus, X, Search, Building2 } from 'lucide-react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { Eye, Edit2, Trash2, Plus, X, Building2 } from 'lucide-react';
+import $ from 'jquery';
+import 'datatables.net';
+import 'datatables.net-dt/css/dataTables.dataTables.css';
 
 const API_BASE = 'http://localhost:8000/api/suppliers';
 
@@ -10,7 +13,6 @@ export default function SupplierManagement() {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('view');
   const [selectedSupplier, setSelectedSupplier] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [formData, setFormData] = useState({
     companyName: '',
@@ -21,9 +23,201 @@ export default function SupplierManagement() {
     status: 'active'
   });
 
+  const tableRef = useRef(null);
+  const dataTableRef = useRef(null);
+  const isInitializingRef = useRef(false);
+
   useEffect(() => {
     fetchSuppliers();
   }, []);
+
+  useLayoutEffect(() => {
+    if (!loading && suppliers.length > 0 && tableRef.current && !isInitializingRef.current) {
+      isInitializingRef.current = true;
+
+      // Destroy existing DataTable instance if it exists
+      if (dataTableRef.current) {
+        try {
+          dataTableRef.current.destroy();
+          dataTableRef.current = null;
+        } catch (err) {
+          console.error('Error destroying DataTable:', err);
+        }
+      }
+
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        try {
+          // Initialize DataTable
+          dataTableRef.current = $(tableRef.current).DataTable({
+            pageLength: 10,
+            lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
+            order: [[0, 'asc']],
+            columnDefs: [
+              { orderable: false, targets: 6 } // Disable sorting on Actions column
+            ],
+            language: {
+              search: "_INPUT_",
+              searchPlaceholder: "Search suppliers...",
+              lengthMenu: "Show _MENU_ entries",
+              info: "Showing _START_ to _END_ of _TOTAL_ suppliers",
+              infoEmpty: "Showing 0 to 0 of 0 suppliers",
+              infoFiltered: "(filtered from _MAX_ total suppliers)",
+              paginate: {
+                first: "First",
+                last: "Last",
+                next: "Next",
+                previous: "Previous"
+              }
+            },
+            dom: '<"datatable-header"lf>rt<"datatable-footer"ip>',
+            drawCallback: function() {
+              $('.dataTables_wrapper').css({
+                'padding': '0'
+              });
+            },
+            destroy: true // Allow reinitialization
+          });
+
+          // Add custom styling only once
+          if (!document.getElementById('datatable-custom-styles')) {
+            const style = document.createElement('style');
+            style.id = 'datatable-custom-styles';
+            style.innerHTML = `
+              .dataTables_wrapper {
+                font-family: inherit !important;
+              }
+              .datatable-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid #e5e7eb;
+                gap: 1rem;
+                flex-wrap: wrap;
+              }
+              .dataTables_length {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+              }
+              .dataTables_length label {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: #374151;
+              }
+              .dataTables_length select {
+                padding: 0.5rem 2rem 0.5rem 0.75rem;
+                border: 1px solid #d1d5db;
+                border-radius: 0.75rem;
+                font-size: 0.875rem;
+                font-weight: 500;
+                background: white;
+                cursor: pointer;
+              }
+              .dataTables_filter {
+                display: flex;
+                align-items: center;
+              }
+              .dataTables_filter label {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: #374151;
+              }
+              .dataTables_filter input {
+                padding: 0.625rem 1rem;
+                border: 1px solid #d1d5db;
+                border-radius: 0.75rem;
+                font-size: 0.875rem;
+                font-weight: 500;
+                min-width: 250px;
+              }
+              .dataTables_filter input:focus {
+                outline: none;
+                box-shadow: 0 0 0 2px #9333ea;
+                border-color: transparent;
+              }
+              .datatable-footer {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+                border-top: 1px solid #e5e7eb;
+                flex-wrap: wrap;
+                gap: 1rem;
+              }
+              .dataTables_info {
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: #6b7280;
+              }
+              .dataTables_paginate {
+                display: flex;
+                gap: 0.25rem;
+              }
+              .dataTables_paginate .paginate_button {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: #374151;
+                border: 1px solid #d1d5db;
+                border-radius: 0.5rem;
+                cursor: pointer;
+                background: white;
+                transition: all 0.2s;
+              }
+              .dataTables_paginate .paginate_button:hover:not(.disabled) {
+                background: linear-gradient(to right, #9333ea, #ec4899);
+                color: white;
+                border-color: transparent;
+              }
+              .dataTables_paginate .paginate_button.current {
+                background: linear-gradient(to right, #9333ea, #ec4899);
+                color: white;
+                border-color: transparent;
+              }
+              .dataTables_paginate .paginate_button.disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+              }
+              table.dataTable thead th {
+                border-bottom: none !important;
+              }
+              table.dataTable tbody td {
+                border-bottom: 1px solid #f3f4f6 !important;
+              }
+              table.dataTable tbody tr:hover {
+                background-color: #f9fafb !important;
+              }
+            `;
+            document.head.appendChild(style);
+          }
+        } catch (err) {
+          console.error('Error initializing DataTable:', err);
+        } finally {
+          isInitializingRef.current = false;
+        }
+      }, 100);
+    }
+
+    return () => {
+      if (dataTableRef.current) {
+        try {
+          dataTableRef.current.destroy();
+          dataTableRef.current = null;
+        } catch (err) {
+          console.error('Error in cleanup:', err);
+        }
+      }
+      isInitializingRef.current = false;
+    };
+  }, [loading, suppliers]);
 
   const fetchSuppliers = async () => {
     try {
@@ -97,6 +291,15 @@ export default function SupplierManagement() {
     try {
       const res = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete supplier');
+      // Destroy DataTable before React updates rows to avoid DOM conflicts
+      if (dataTableRef.current) {
+        try {
+          dataTableRef.current.destroy();
+          dataTableRef.current = null;
+        } catch (err) {
+          console.error('Error destroying DataTable before delete refresh:', err);
+        }
+      }
       await fetchSuppliers();
       setError(null);
     } catch (err) {
@@ -116,7 +319,15 @@ export default function SupplierManagement() {
       });
       
       if (!res.ok) throw new Error(`Failed to ${modalMode} supplier`);
-      
+      // Destroy DataTable before React updates rows to avoid DOM conflicts
+      if (dataTableRef.current) {
+        try {
+          dataTableRef.current.destroy();
+          dataTableRef.current = null;
+        } catch (err) {
+          console.error('Error destroying DataTable before submit refresh:', err);
+        }
+      }
       await fetchSuppliers();
       setShowModal(false);
       setError(null);
@@ -130,13 +341,8 @@ export default function SupplierManagement() {
   };
 
   const filteredSuppliers = suppliers.filter(s => {
-    const matchesSearch = s.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         s.contactPerson?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         s.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    
     const matchesStatus = filterStatus === 'all' || s.status === filterStatus;
-    
-    return matchesSearch && matchesStatus;
+    return matchesStatus;
   });
 
   return (
@@ -168,33 +374,6 @@ export default function SupplierManagement() {
           </div>
         )}
 
-        {/* Search and Filters */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" strokeWidth={1.5} />
-              <input
-                type="text"
-                placeholder="Search suppliers..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
-              />
-            </div>
-            <div className="flex gap-3">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm bg-white"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
         {/* Suppliers Table */}
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4">
@@ -206,7 +385,7 @@ export default function SupplierManagement() {
                 <h3 className="text-xl font-bold text-white">All Suppliers</h3>
               </div>
               <span className="px-3 py-1.5 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg text-sm font-bold text-white">
-                {filteredSuppliers.length} suppliers
+                {suppliers.length} suppliers
               </span>
             </div>
           </div>
@@ -226,7 +405,7 @@ export default function SupplierManagement() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table ref={tableRef} className="w-full" key={suppliers.map(s => s.id).join(',')}>
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">ID</th>
@@ -239,7 +418,7 @@ export default function SupplierManagement() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {filteredSuppliers.map(supplier => (
+                  {suppliers.map(supplier => (
                     <tr key={supplier.id} className="hover:bg-gray-50 transition-all">
                       <td className="px-6 py-3">
                         <span className="font-mono text-xs font-bold text-purple-600">#{supplier.id}</span>

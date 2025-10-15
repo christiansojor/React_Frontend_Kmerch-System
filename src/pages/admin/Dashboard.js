@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   DollarSign, ArrowUp, ArrowDown, ShoppingCart, Package,
   Clock, FileText, Send, TrendingUp, AlertCircle, Sparkles,
   Box, Eye, Search, Filter
 } from 'lucide-react';
+import $ from 'jquery';
+import 'datatables.net';
+import 'datatables.net-dt/css/dataTables.dataTables.css';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -23,12 +26,181 @@ const AdminDashboard = () => {
   const [recentProducts, setRecentProducts] = useState([]);
   const [lowStockProducts, setLowStockProducts] = useState([]);
   const [stockRequests, setStockRequests] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  const tableRef = useRef(null);
+  const dataTableRef = useRef(null);
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    if (!loading && stockRequests.length > 0 && tableRef.current) {
+      // Destroy existing DataTable instance if it exists
+      if (dataTableRef.current) {
+        dataTableRef.current.destroy();
+      }
+
+      // Initialize DataTable
+      dataTableRef.current = $(tableRef.current).DataTable({
+        pageLength: 10,
+        lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
+        order: [[0, 'desc']], // Sort by ID descending (newest first)
+        columnDefs: [
+          { orderable: true, targets: '_all' }
+        ],
+        language: {
+          search: "_INPUT_",
+          searchPlaceholder: "Search requests...",
+          lengthMenu: "Show _MENU_ entries",
+          info: "Showing _START_ to _END_ of _TOTAL_ requests",
+          infoEmpty: "Showing 0 to 0 of 0 requests",
+          infoFiltered: "(filtered from _MAX_ total requests)",
+          paginate: {
+            first: "First",
+            last: "Last",
+            next: "Next",
+            previous: "Previous"
+          }
+        },
+        dom: '<"datatable-header"lf>rt<"datatable-footer"ip>',
+        drawCallback: function() {
+          $('.dataTables_wrapper').css({
+            'padding': '0'
+          });
+        }
+      });
+
+      // Add custom styling
+      const style = document.createElement('style');
+      style.innerHTML = `
+        .dataTables_wrapper {
+          font-family: inherit !important;
+        }
+        .datatable-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 1.5rem;
+          border-bottom: 1px solid #e5e7eb;
+          gap: 1rem;
+          flex-wrap: wrap;
+          background-color: #f9fafb;
+        }
+        .dataTables_length {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        .dataTables_length label {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #374151;
+        }
+        .dataTables_length select {
+          padding: 0.5rem 2rem 0.5rem 0.75rem;
+          border: 1px solid #d1d5db;
+          border-radius: 0.75rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          background: white;
+          cursor: pointer;
+        }
+        .dataTables_filter {
+          display: flex;
+          align-items: center;
+        }
+        .dataTables_filter label {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #374151;
+        }
+        .dataTables_filter input {
+          padding: 0.625rem 1rem;
+          border: 1px solid #d1d5db;
+          border-radius: 0.75rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          min-width: 250px;
+        }
+        .dataTables_filter input:focus {
+          outline: none;
+          box-shadow: 0 0 0 2px #9333ea;
+          border-color: transparent;
+        }
+        .datatable-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 1.5rem;
+          border-top: 1px solid #e5e7eb;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+        .dataTables_info {
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #6b7280;
+        }
+        .dataTables_paginate {
+          display: flex;
+          gap: 0.25rem;
+        }
+        .dataTables_paginate .paginate_button {
+          padding: 0.5rem 0.75rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #374151;
+          border: 1px solid #d1d5db;
+          border-radius: 0.5rem;
+          cursor: pointer;
+          background: white;
+          transition: all 0.2s;
+        }
+        .dataTables_paginate .paginate_button:hover:not(.disabled) {
+          background: linear-gradient(to right, #ec4899, #9333ea);
+          color: white;
+          border-color: transparent;
+        }
+        .dataTables_paginate .paginate_button.current {
+          background: linear-gradient(to right, #ec4899, #9333ea);
+          color: white;
+          border-color: transparent;
+        }
+        .dataTables_paginate .paginate_button.disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        table.dataTable thead th {
+          border-bottom: none !important;
+        }
+        table.dataTable tbody td {
+          border-bottom: 1px solid #f3f4f6 !important;
+        }
+        table.dataTable tbody tr:hover {
+          background-color: #eff6ff !important;
+        }
+      `;
+      if (!document.getElementById('datatable-custom-styles')) {
+        style.id = 'datatable-custom-styles';
+        document.head.appendChild(style);
+      }
+    }
+
+    return () => {
+      if (dataTableRef.current) {
+        dataTableRef.current.destroy();
+        dataTableRef.current = null;
+      }
+    };
+  }, [loading, stockRequests, statusFilter]);
 
   const fetchDashboardData = async () => {
     try {
@@ -105,15 +277,10 @@ const AdminDashboard = () => {
   };
 
   const filteredRequests = stockRequests.filter(request => {
-    const matchesSearch = 
-      (request.product?.name || request.productName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (request.supplier?.name || request.supplierName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.id.toString().includes(searchTerm);
-    
     const matchesStatus = statusFilter === 'all' || 
       (request.status?.toLowerCase() || 'pending') === statusFilter.toLowerCase();
     
-    return matchesSearch && matchesStatus;
+    return matchesStatus;
   });
 
   const StatCard = ({ icon: Icon, title, value, subtitle, color }) => (
@@ -358,39 +525,7 @@ const AdminDashboard = () => {
                 </div>
                 <h3 className="text-xl font-bold text-white">Stock Requests</h3>
               </div>
-              <span className="px-3 py-1.5 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg text-sm font-bold text-white">
-                {filteredRequests.length} of {stockRequests.length} requests
-              </span>
-            </div>
-          </div>
-
-          {/* Search and Filter Bar */}
-          <div className="p-5 border-b border-gray-200 bg-gray-50">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" strokeWidth={1.5} />
-                <input
-                  type="text"
-                  placeholder="Search by product, supplier, or ID..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                />
-              </div>
-              <div className="relative">
-                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" strokeWidth={1.5} />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="pl-10 pr-10 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none bg-white cursor-pointer text-sm font-medium"
-                >
-                  <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="accepted">Accepted</option>
-                  <option value="completed">Completed</option>
-                  <option value="declined">Declined</option>
-                </select>
-              </div>
+              
             </div>
           </div>
 
@@ -400,11 +535,11 @@ const AdminDashboard = () => {
               <div className="text-center py-16">
                 <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" strokeWidth={1.5} />
                 <p className="text-gray-400 font-medium text-lg">
-                  {searchTerm || statusFilter !== 'all' ? 'No matching requests found' : 'No stock requests yet'}
+                  {statusFilter !== 'all' ? 'No matching requests found' : 'No stock requests yet'}
                 </p>
               </div>
             ) : (
-              <table className="w-full">
+              <table ref={tableRef} className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">ID</th>
@@ -453,4 +588,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;  
+export default AdminDashboard;
