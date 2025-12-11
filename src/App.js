@@ -4,6 +4,11 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from "react-route
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Unauthorized from "./pages/Unauthorized";
+import ProtectedRoute from "./components/ProtectedRoute";
+import PublicRoute from "./components/PublicRoute";
+
+
 
 // Dashboards
 import CustomerDashboard from "./pages/customer/Dashboard";
@@ -15,9 +20,18 @@ import SupplierDashboard from "./pages/supplier/Dashboard";
 import AdminLayout from "./components/AdminLayout";
 
 // Admin Pages
-import StockRequest from "./pages/admin/supplier/StockRequest";
+import Inventory from "./pages/admin/Inventory";
 import GroupsManagement from './pages/admin/GroupsManagement';
 import SupplierManagement from './pages/admin/supplier/SupplierManagement';
+import StockRequest from './pages/admin/supplier/StockRequest';
+import CustomOrder from "./pages/admin/customOrder";
+import TradeVerification from "./pages/admin/TradeVerification";
+import PurchaseRecords from "./pages/admin/PurchaseRecords";
+import TradingHistory from "./pages/admin/TradingHistory";
+import Analytics from "./pages/admin/Analytics";
+import UserManagement from "./pages/admin/UserManagement";
+import ActivityLogs from "./pages/admin/ActivityLogs";
+import Profile from "./pages/admin/Profile";
 
 
 // Admin Product CRUD
@@ -46,28 +60,53 @@ function AppContent() {
 
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route element={<PublicRoute />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+        </Route>
+        <Route path="/unauthorized" element={<Unauthorized />} />
 
         {/* Dashboard routes (without AdminLayout - direct access) */}
-        <Route path="/customer/dashboard" element={<CustomerDashboard />} />
-        <Route path="/mediator/dashboard" element={<MediatorDashboard />} />
-        <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
-
+        <Route element={<ProtectedRoute allowedRoles={["ROLE_USER"]} />}>
+          <Route path="/customer/dashboard" element={<CustomerDashboard />} />
+        </Route>
+        <Route element={<ProtectedRoute allowedRoles={["ROLE_MEDIATOR"]} />}>
+          <Route path="/mediator/dashboard" element={<MediatorDashboard />} />
+        </Route>        
+        
+        <Route element={<ProtectedRoute allowedRoles={["ROLE_SUPPLIER"]} />}>
+          <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
+        </Route>
         {/* Admin routes with shared sidebar layout */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="supplier/stock-request" element={<StockRequest />} />
-          <Route path="groups" element={<GroupsManagement />} />
-          <Route path="/admin/suppliers" element={<SupplierManagement />} />
+// Admin routes with shared sidebar layout - now accessible by both ADMIN and STAFF
+        <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_STAFF']} />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="products" element={<ProductManagement />} />
+            <Route path="products/new" element={<NewProduct />} />
+            <Route path="products/edit/:id" element={<EditProduct />} />
+            <Route path="products/view/:id" element={<ViewProduct />} />
+            <Route path="groups" element={<GroupsManagement />} />
+            <Route path="suppliers" element={<SupplierManagement />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="analytics" element={<Analytics />} />
+            {/* Admin-only routes */}
+            <Route path="inventory" element={<Inventory />} />
+            <Route path="custom-order" element={<CustomOrder />} />
+            <Route path="trade-verification" element={<TradeVerification />} />
+            <Route path="orders" element={<PurchaseRecords />} />
+            <Route path="trading" element={<TradingHistory />} />
+            <Route path="userManagement" element={<UserManagement />} />
+            <Route path="ActivityLogs" element={<ActivityLogs />} />
+          </Route>
+        </Route>
 
-          
-          {/* Admin Product CRUD */}
-          <Route path="products" element={<ProductManagement />} />
-          <Route path="products/new" element={<NewProduct />} />
-          <Route path="products/edit/:id" element={<EditProduct />} />
-          <Route path="products/view/:id" element={<ViewProduct />} />
+        {/* Staff-only routes */}
+        <Route element={<ProtectedRoute allowedRoles={['ROLE_STAFF']} />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="stock-request" element={<StockRequest />} />
+          </Route>
         </Route>
       </Routes>
     </>

@@ -27,6 +27,55 @@ export default function SupplierManagement() {
   const dataTableRef = useRef(null);
   const isInitializingRef = useRef(false);
 
+  // Helper function to log activity
+  const logActivity = async (action, supplierData) => {
+    try {
+      const token = localStorage.getItem('token');
+      const userDataStr = localStorage.getItem('user');
+      const userData = userDataStr ? JSON.parse(userDataStr) : null;
+
+      if (!userData) {
+        console.warn('📝 [ACTIVITY LOG] No user data, cannot log activity');
+        return;
+      }
+
+      const targetData = {
+        entity: 'Supplier',
+        entity_id: supplierData.id || supplierData.entity_id,
+        entity_name: supplierData.companyName || supplierData.entity_name,
+        email: supplierData.email,
+        status: supplierData.status
+      };
+
+      const activityData = {
+        userId: userData.id,
+        username: userData.username,
+        role: userData.role,
+        action: action,
+        targetData: JSON.stringify(targetData)
+      };
+
+      console.log('📝 [ACTIVITY LOG] Sending activity log:', activityData);
+
+      const response = await fetch('http://localhost:8000/api/activity-logs/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(activityData)
+      });
+
+      if (response.ok) {
+        console.log('✅ [ACTIVITY LOG] Activity logged successfully');
+      } else {
+        console.error('❌ [ACTIVITY LOG] Failed to log activity:', await response.text());
+      }
+    } catch (error) {
+      console.error('❌ [ACTIVITY LOG] Error logging activity:', error);
+    }
+  };
+
   useEffect(() => {
     fetchSuppliers();
   }, []);
@@ -221,18 +270,26 @@ export default function SupplierManagement() {
 
   const fetchSuppliers = async () => {
     try {
+      console.log('🔵 [SUPPLIER] Fetching suppliers...');
       setLoading(true);
-      const res = await fetch(API_BASE);
+      const token = localStorage.getItem('token');
+      const res = await fetch(API_BASE, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      console.log('🔵 [SUPPLIER] Fetch response status:', res.status);
       if (!res.ok) {
         const text = await res.text();
         throw new Error(`Failed to fetch suppliers: ${res.status} ${text.substring(0, 100)}`);
       }
       const data = await res.json();
+      console.log('🔵 [SUPPLIER] Fetched suppliers:', data.length);
       setSuppliers(data);
       setError(null);
     } catch (err) {
+      console.error('❌ [SUPPLIER] Fetch error:', err);
       setError(err.message);
-      console.error('Fetch error:', err);
     } finally {
       setLoading(false);
     }
@@ -253,22 +310,43 @@ export default function SupplierManagement() {
 
   const handleView = async (id) => {
     try {
-      const res = await fetch(`${API_BASE}/${id}`);
+      console.log('👁️ [SUPPLIER] Viewing supplier:', id);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!res.ok) throw new Error('Failed to fetch supplier');
       const data = await res.json();
+      console.log('👁️ [SUPPLIER] Supplier data:', data);
       setSelectedSupplier(data);
       setModalMode('view');
       setShowModal(true);
     } catch (err) {
+      console.error('❌ [SUPPLIER] View error:', err);
       setError(err.message);
     }
   };
 
   const handleEdit = async (id) => {
     try {
-      const res = await fetch(`${API_BASE}/${id}`);
+      console.log('✏️ [SUPPLIER] Editing supplier:', id);
+      const token = localStorage.getItem('token');
+      const userDataStr = localStorage.getItem('user');
+      const userData = userDataStr ? JSON.parse(userDataStr) : null;
+      
+      console.log('✏️ [SUPPLIER] Current User:', userData);
+      console.log('✏️ [SUPPLIER] User Role:', userData?.role || 'Unknown');
+      
+      const res = await fetch(`${API_BASE}/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!res.ok) throw new Error('Failed to fetch supplier');
       const data = await res.json();
+      console.log('✏️ [SUPPLIER] Loaded data for edit:', data);
       setFormData({
         companyName: data.companyName || '',
         contactPerson: data.contactPerson || '',
@@ -281,6 +359,7 @@ export default function SupplierManagement() {
       setModalMode('edit');
       setShowModal(true);
     } catch (err) {
+      console.error('❌ [SUPPLIER] Edit error:', err);
       setError(err.message);
     }
   };
@@ -289,8 +368,43 @@ export default function SupplierManagement() {
     if (!window.confirm('Are you sure you want to delete this supplier?')) return;
     
     try {
-      const res = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+      console.log('🗑️ [SUPPLIER] Deleting supplier:', id);
+      const token = localStorage.getItem('token');
+      const userDataStr = localStorage.getItem('user');
+      const userData = userDataStr ? JSON.parse(userDataStr) : null;
+      
+      console.log('🗑️ [SUPPLIER] Token:', token ? 'Present' : 'Missing');
+      console.log('🗑️ [SUPPLIER] Current User:', userData);
+      console.log('🗑️ [SUPPLIER] User Role:', userData?.role || 'Unknown');
+      console.log('🗑️ [SUPPLIER] User ID:', userData?.id || 'Unknown');
+      console.log('🗑️ [SUPPLIER] Username:', userData?.username || 'Unknown');
+      
+      const res = await fetch(`${API_BASE}/${id}`, { 
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      console.log('🗑️ [SUPPLIER] Delete response status:', res.status);
+      const responseData = await res.json();
+      console.log('🗑️ [SUPPLIER] Delete response:', responseData);
+      
       if (!res.ok) throw new Error('Failed to delete supplier');
+      
+      console.log('✅ [SUPPLIER] Supplier deleted successfully');
+
+      // Log activity for deleted supplier
+      const deletedSupplier = suppliers.find(s => s.id === id);
+      if (deletedSupplier) {
+        await logActivity('DELETE', {
+          id: deletedSupplier.id,
+          companyName: deletedSupplier.companyName,
+          email: deletedSupplier.email,
+          status: deletedSupplier.status
+        });
+      }
+      
       // Destroy DataTable before React updates rows to avoid DOM conflicts
       if (dataTableRef.current) {
         try {
@@ -303,22 +417,57 @@ export default function SupplierManagement() {
       await fetchSuppliers();
       setError(null);
     } catch (err) {
+      console.error('❌ [SUPPLIER] Delete error:', err);
       setError(err.message);
     }
   };
 
   const handleSubmit = async () => {
     try {
+      console.log(`➕ [SUPPLIER] ${modalMode === 'add' ? 'Creating' : 'Updating'} supplier...`);
+      console.log(`➕ [SUPPLIER] Form data:`, formData);
+      
+      const token = localStorage.getItem('token');
+      const userDataStr = localStorage.getItem('user');
+      const userData = userDataStr ? JSON.parse(userDataStr) : null;
+      
+      console.log('➕ [SUPPLIER] Token:', token ? 'Present' : 'Missing');
+      console.log('➕ [SUPPLIER] Current User:', userData);
+      console.log('➕ [SUPPLIER] User Role:', userData?.role || 'Unknown');
+      console.log('➕ [SUPPLIER] User ID:', userData?.id || 'Unknown');
+      console.log('➕ [SUPPLIER] Username:', userData?.username || 'Unknown');
+      
       const url = modalMode === 'add' ? API_BASE : `${API_BASE}/${selectedSupplier.id}`;
       const method = modalMode === 'add' ? 'POST' : 'PUT';
       
+      console.log(`➕ [SUPPLIER] Sending ${method} to ${url}`);
+      
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(formData)
       });
       
+      console.log(`➕ [SUPPLIER] Response status:`, res.status);
+      const responseData = await res.json();
+      console.log(`➕ [SUPPLIER] Response data:`, responseData);
+      
       if (!res.ok) throw new Error(`Failed to ${modalMode} supplier`);
+      
+      console.log(`✅ [SUPPLIER] Supplier ${modalMode === 'add' ? 'created' : 'updated'} successfully`);
+
+      // Log activity
+      const supplierData = {
+        id: modalMode === 'add' ? responseData.id : selectedSupplier.id,
+        companyName: formData.companyName,
+        email: formData.email,
+        status: formData.status
+      };
+      await logActivity(modalMode === 'add' ? 'CREATE' : 'UPDATE', supplierData);
+      
       // Destroy DataTable before React updates rows to avoid DOM conflicts
       if (dataTableRef.current) {
         try {
@@ -332,6 +481,7 @@ export default function SupplierManagement() {
       setShowModal(false);
       setError(null);
     } catch (err) {
+      console.error(`❌ [SUPPLIER] Submit error:`, err);
       setError(err.message);
     }
   };

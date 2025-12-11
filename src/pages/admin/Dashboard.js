@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   DollarSign, ArrowUp, ArrowDown, ShoppingCart, Package,
   Clock, FileText, Send, TrendingUp, AlertCircle, Sparkles,
-  Box, Eye, Search, Filter
+  Box, Eye, Search, Filter, ArrowRightLeft
 } from 'lucide-react';
 import $ from 'jquery';
 import 'datatables.net';
@@ -14,10 +14,11 @@ const AdminDashboard = () => {
   const BASE_URL = 'http://127.0.0.1:8000';
   
   const [loading, setLoading] = useState(true);
+  const [userRoles, setUserRoles] = useState([]);
   const [stats, setStats] = useState({
     totalProducts: 0,
-    pendingOrders: 0,
     totalOrders: 0,
+    totalTrades: 0,
     pendingTrades: 0,
     lowStockCount: 0,
     stockRequestsCount: 0
@@ -32,8 +33,21 @@ const AdminDashboard = () => {
   const dataTableRef = useRef(null);
 
   useEffect(() => {
-    fetchDashboardData();
+    // Get user roles from localStorage
+    const storedRoles = localStorage.getItem('roles');
+    if (storedRoles) {
+      try {
+        const roles = JSON.parse(storedRoles);
+        setUserRoles(Array.isArray(roles) ? roles : [roles]);
+      } catch (e) {
+        setUserRoles([storedRoles]);
+      }
+    }
   }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [userRoles]);
 
   useEffect(() => {
     if (!loading && stockRequests.length > 0 && tableRef.current) {
@@ -207,8 +221,15 @@ const AdminDashboard = () => {
       const token = localStorage.getItem('token') || '';
       const headers = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token.trim()}`
       };
+
+      // Fetch dashboard statistics
+      const statsResponse = await fetch(`${BASE_URL}/api/admin/dashboard/statistics`, { headers });
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        setStats(statsData);
+      }
 
       // Fetch products
       const productsResponse = await fetch(`${BASE_URL}/api/products`, { headers });
@@ -221,27 +242,23 @@ const AdminDashboard = () => {
       // Filter low stock products (stock < 10)
       const lowStock = productsData.filter(p => (p.stockQuantity || 0) < 10).slice(0, 5);
       
-      // Fetch stock requests
-      const stockReqResponse = await fetch(`${BASE_URL}/api/stock-requests`, { headers });
-      const stockReqData = await stockReqResponse.json();
-      
-      // Sort stock requests by date (most recent first)
-      const sortedRequests = [...stockReqData].sort((a, b) => 
-        new Date(b.requestDate || b.createdAt) - new Date(a.requestDate || a.createdAt)
-      );
-
-      setStats({
-        totalProducts: productsData.length,
-        pendingOrders: 0,
-        totalOrders: 0,
-        pendingTrades: 0,
-        lowStockCount: lowStock.length,
-        stockRequestsCount: stockReqData.length
-      });
+      // Fetch stock requests only for staff (not admin)
+      const isStaff = userRoles.includes('ROLE_STAFF') && !userRoles.includes('ROLE_ADMIN');
+      if (isStaff) {
+        const stockReqResponse = await fetch(`${BASE_URL}/api/stock-requests`, { headers });
+        const stockReqData = await stockReqResponse.json();
+        
+        // Sort stock requests by date (most recent first)
+        const sortedRequests = [...stockReqData].sort((a, b) => 
+          new Date(b.requestDate || b.createdAt) - new Date(a.requestDate || a.createdAt)
+        );
+        setStockRequests(sortedRequests);
+      } else {
+        setStockRequests([]);
+      }
       
       setRecentProducts(recentProds);
       setLowStockProducts(lowStock);
-      setStockRequests(sortedRequests);
       
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
@@ -349,24 +366,24 @@ const AdminDashboard = () => {
             color="bg-purple-500"
           />
           <StatCard 
-            icon={ShoppingCart}
-            title="Pending Orders"
-            value={stats.pendingOrders}
-            subtitle="Coming soon"
-            color="bg-pink-500"
-          />
-          <StatCard 
             icon={DollarSign}
             title="Total Orders"
             value={stats.totalOrders}
-            subtitle="Coming soon"
+            subtitle="All purchase orders"
             color="bg-blue-500"
           />
           <StatCard 
-            icon={TrendingUp}
+            icon={ArrowRightLeft}
+            title="Total Trades"
+            value={stats.totalTrades}
+            subtitle="All trade transactions"
+            color="bg-cyan-500"
+          />
+          <StatCard 
+            icon={Clock}
             title="Pending Trades"
             value={stats.pendingTrades}
-            subtitle="Coming soon"
+            subtitle="Awaiting verification"
             color="bg-purple-500"
           />
         </div>
@@ -515,7 +532,8 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Stock Requests Table - Full Width */}
+        {/* Stock Requests Table - Full Width (Staff Only) */}
+        {userRoles.includes('ROLE_STAFF') && !userRoles.includes('ROLE_ADMIN') && (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="bg-gradient-to-r from-pink-500 to-purple-500 px-6 py-4">
             <div className="flex items-center justify-between">
@@ -583,6 +601,7 @@ const AdminDashboard = () => {
             )}
           </div>
         </div>
+        )}
       </div>
     </div>
   );

@@ -104,6 +104,10 @@ const ProductManagement = () => {
     try {
       const token = localStorage.getItem('token') || '';
       
+      // Get product name before deleting for logging
+      const productToDelete = products.find(p => p.id === id);
+      const productName = productToDelete ? productToDelete.name : `Product #${id}`;
+      
       const response = await fetch(`${BASE_URL}/api/products/${id}`, {
         method: 'DELETE',
         headers: { 
@@ -115,6 +119,29 @@ const ProductManagement = () => {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Failed to delete product');
+      }
+
+      // Log activity to activity logs
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        await fetch('http://127.0.0.1:8000/api/activity-logs/create', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'DELETE',
+            targetData: JSON.stringify({
+              entity: 'Product',
+              entity_id: id,
+              entity_name: productName
+            })
+          })
+        });
+        console.log('✅ Product DELETE logged to activity logs');
+      } catch (logError) {
+        console.error('❌ Failed to log activity:', logError);
       }
 
       setProducts(products.filter(p => p.id !== id));
