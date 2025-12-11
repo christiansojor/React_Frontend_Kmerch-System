@@ -21,7 +21,7 @@ const NewProduct = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = 'dummy-token';
+        const token = localStorage.getItem('token') || 'dummy-token';
         
         const groupsRes = await fetch('http://127.0.0.1:8000/api/groups', {
           headers: {
@@ -90,7 +90,12 @@ const NewProduct = () => {
     setLoading(true);
 
     try {
-      const token = 'dummy-token';
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        alert('Authentication required. Please login again.');
+        return;
+      }
       
       const formData = new FormData();
       formData.append('name', name);
@@ -116,8 +121,44 @@ const NewProduct = () => {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to create product');
       }
+
+      const result = await res.json();
+      
+      // Log activity to activity logs
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        await fetch('http://127.0.0.1:8000/api/activity-logs/create', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'CREATE',
+            targetData: JSON.stringify({
+              entity: 'Product',
+              entity_id: result.id,
+              entity_name: name
+            })
+          })
+        });
+        console.log('✅ Product CREATE logged to activity logs');
+      } catch (logError) {
+        console.error('❌ Failed to log activity:', logError);
+      }
       
       alert('Product created successfully!');
+      
+      // Reset form
+      setName('');
+      setDescription('');
+      setPrice('');
+      setCategory('');
+      setSelectedGroupId('');
+      setStock('');
+      setImageFile(null);
+      setImagePreview('');
+      setSelectedSupplier(null);
     } catch (err) {
       console.error(err);
       alert(err.message || 'Failed to create product');

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Package, 
   CheckCircle, 
@@ -11,10 +12,12 @@ import {
   Eye,
   DollarSign,
   Calendar,
-  Trash2
+  Trash2,
+  LogOut
 } from 'lucide-react';
 
 const SupplierDashboard = () => {
+  const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
@@ -56,6 +59,25 @@ const SupplierDashboard = () => {
   const showAlert = (type, message) => {
     setAlert({ type, message });
     setTimeout(() => setAlert(null), 5000);
+  };
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('http://127.0.0.1:8000/api/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('roles');
+      localStorage.removeItem('user');
+      navigate('/login');
+    }
   };
 
   const handleAction = async (id, action) => {
@@ -203,10 +225,19 @@ const SupplierDashboard = () => {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-purple-600" />
-              <span className="text-2xl font-bold text-purple-700">{stats.total}</span>
-              <span className="text-gray-600">Total Requests</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-purple-600" />
+                <span className="text-2xl font-bold text-purple-700">{stats.total}</span>
+                <span className="text-gray-600">Total Requests</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="font-semibold">Logout</span>
+              </button>
             </div>
           </div>
 

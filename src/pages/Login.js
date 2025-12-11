@@ -2,21 +2,20 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 function Login() {
+  const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
-  const [focusedField, setFocusedField] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const navigate = useNavigate();
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
-  const handleLogin = async (e) => {
+const handleLogin = async (e) => {
   e.preventDefault();
-  if (isLoading) return;  // <-- prevents double execution
+  if (isLoading) return;
 
   setIsLoading(true);
   setError("");
@@ -35,11 +34,41 @@ function Login() {
       return;
     }
 
+    // ✅ SAVE TOKEN & ROLES
     localStorage.setItem("token", data.token);
+    localStorage.setItem("roles", JSON.stringify(data.roles));
+    localStorage.setItem("user", JSON.stringify(data.user));
 
     console.log("Token saved:", data.token);
+    console.log("Roles saved:", data.roles);
+    console.log("User saved:", data.user);
 
-    navigate("/admin/dashboard");
+    // ✅ DETERMINE DASHBOARD PATH
+    let dashboardPath;
+    if (data.roles.includes("ROLE_ADMIN")) {
+      dashboardPath = "/admin/dashboard";
+    } 
+    else if (data.roles.includes("ROLE_STAFF")) {
+      dashboardPath = "/admin/dashboard";
+    } 
+    else if (data.roles.includes("ROLE_SUPPLIER")) {
+      dashboardPath = "/supplier/dashboard";
+    } 
+    else if (data.roles.includes("ROLE_MEDIATOR")) {
+      dashboardPath = "/mediator/dashboard";
+    } 
+    else {
+      dashboardPath = "/customer/dashboard";
+    }
+
+    // ✅ REPLACE HISTORY & NAVIGATE
+    navigate(dashboardPath, { replace: true });
+    
+    // ✅ PUSH DASHBOARD AGAIN TO BLOCK BACK NAVIGATION
+    setTimeout(() => {
+      window.history.pushState(null, '', dashboardPath);
+    }, 0);
+
   } catch (err) {
     setError("Something went wrong. Please try again.");
   } finally {
@@ -70,7 +99,6 @@ function Login() {
       {/* Left Side - Logo Section */}
       <div className="relative z-10 flex-1 flex flex-col justify-center items-center p-8 lg:p-16">
         <div className={`text-center transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          {/* Logo Container */}
           <div className="w-48 h-48 lg:w-64 lg:h-64 mx-auto mb-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-3xl flex items-center justify-center overflow-hidden group hover:scale-105 transition-transform duration-500 shadow-2xl shadow-blue-500/25">
             <div className="text-center">
               <div className="text-6xl font-black text-white mb-2">K</div>
@@ -89,7 +117,6 @@ function Login() {
             <p className="text-lg">Welcome back to the ultimate</p>
             <p className="text-lg">K-pop trading community</p>
             
-            {/* Animated Features */}
             <div className="mt-8 space-y-3">
               <div className="group flex items-center justify-center space-x-3 p-3 bg-blue-500/10 backdrop-blur-sm border border-blue-500/20 rounded-xl hover:border-blue-500/40 transition-all duration-300">
                 <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
@@ -114,7 +141,6 @@ function Login() {
       <div className="relative z-10 flex-1 flex flex-col justify-center items-center p-8 lg:p-16">
         <div className={`w-full max-w-md transition-all duration-1000 delay-300 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
           
-          {/* Form Container */}
           <div className="bg-gradient-to-br from-gray-900/50 to-black/50 backdrop-blur-lg border border-white/10 rounded-3xl p-8 lg:p-10 shadow-2xl">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-black bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
@@ -123,58 +149,60 @@ function Login() {
               <p className="text-gray-400">Sign in to your account</p>
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-400 text-sm">
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleLogin} className="space-y-6">
-              {/* Email Field */}
+            <div className="space-y-10">
+              {/* Email Field with Floating Label */}
               <div className="relative">
                 <input
                   type="email"
-                  placeholder="Email Address"
+                  id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  onFocus={() => setFocusedField("email")}
-                  onBlur={() => setFocusedField("")}
                   required
-                  className="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none transition-all duration-300"
+                  className="w-full px-0 pt-2 pb-2 bg-transparent border-0 border-b-2 border-white/20 text-white text-base focus:outline-none focus:border-transparent transition-all duration-300 peer"
                 />
-                <div className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400 transition-all duration-300 ${focusedField === 'email' ? 'w-full' : 'w-0'}`}></div>
+                <label
+                  htmlFor="email"
+                  className="absolute left-0 top-2 text-gray-400 text-base transition-all duration-300 pointer-events-none peer-focus:top-[-20px] peer-focus:text-xs peer-focus:text-blue-400 peer-valid:top-[-20px] peer-valid:text-xs peer-valid:text-blue-400"
+                >
+                  Email Address
+                </label>
+                {/* Animated bottom border - expands from center */}
+                <span className="absolute bottom-0 left-1/2 h-[2px] bg-gradient-to-r from-blue-400 to-cyan-400 transition-all duration-400 -translate-x-1/2 w-0 peer-focus:w-full"></span>
               </div>
 
-              {/* Password Field */}
+              {/* Password Field with Floating Label */}
               <div className="relative">
                 <input
                   type="password"
-                  placeholder="Password"
+                  id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onFocus={() => setFocusedField("password")}
-                  onBlur={() => setFocusedField("")}
                   required
-                  className="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none transition-all duration-300"
+                  className="w-full px-0 pt-2 pb-2 bg-transparent border-0 border-b-2 border-white/20 text-white text-base focus:outline-none focus:border-transparent transition-all duration-300 peer"
                 />
-                <div className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-purple-400 to-pink-400 transition-all duration-300 ${focusedField === 'password' ? 'w-full' : 'w-0'}`}></div>
+                <label
+                  htmlFor="password"
+                  className="absolute left-0 top-2 text-gray-400 text-base transition-all duration-300 pointer-events-none peer-focus:top-[-20px] peer-focus:text-xs peer-focus:text-purple-400 peer-valid:top-[-20px] peer-valid:text-xs peer-valid:text-purple-400"
+                >
+                  Password
+                </label>
+                {/* Animated bottom border - expands from center */}
+                <span className="absolute bottom-0 left-1/2 h-[2px] bg-gradient-to-r from-purple-400 to-pink-400 transition-all duration-400 -translate-x-1/2 w-0 peer-focus:w-full"></span>
               </div>
 
               {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center space-x-2 text-gray-400 cursor-pointer">
-                  <input type="checkbox" className="rounded bg-white/10 border-white/20 text-blue-500" />
-                  <span>Remember me</span>
-                </label>
-                <button type="button" className="text-blue-400 hover:text-blue-300 transition-colors duration-300">
-                  Forgot password?
-                </button>
+              <div className="flex items-center justify-between text-sm pt-2">
               </div>
 
               {/* Login Button */}
               <button
-                type="submit"
+                onClick={handleLogin}
                 disabled={isLoading}
                 className="group relative w-full p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
@@ -186,17 +214,19 @@ function Login() {
                   )}
                 </span>
               </button>
-            </form>
+            </div>
 
             {/* Register Link */}
             <div className="mt-8 text-center">
               <p className="text-gray-400 mb-4">New to K-Dream?</p>
-              <Link to="/register" className="group text-blue-400 hover:text-blue-300 font-medium transition-all duration-300">
-                <span className="relative">
-                  Create an account
-                  <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400 transition-all duration-300 group-hover:w-full"></div>
-                </span>
-              </Link>
+              <button className="group text-blue-400 hover:text-blue-300 font-medium transition-all duration-300">
+                <a href="/register">
+                  <span className="relative">
+                    Create an account
+                    <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400 transition-all duration-300 group-hover:w-full"></div>
+                  </span>
+                </a>
+              </button>
             </div>
           </div>
         </div>

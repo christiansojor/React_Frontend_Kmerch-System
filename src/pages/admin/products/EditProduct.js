@@ -22,8 +22,26 @@ const EditProduct = () => {
   const [loading, setLoading] = useState(true);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [userRoles, setUserRoles] = useState([]);
+  
+  // Check if user is admin (can edit stock) or staff (read-only)
+  const isAdmin = userRoles.includes('ROLE_ADMIN');
+  const isStaffOnly = userRoles.includes('ROLE_STAFF') && !userRoles.includes('ROLE_ADMIN');
 
   const categories = ['Clothing', 'Accessories', 'Posters', 'Albums', 'Lightsticks'];
+
+  useEffect(() => {
+    // Get user roles from localStorage
+    const storedRoles = localStorage.getItem('roles');
+    if (storedRoles) {
+      try {
+        const roles = JSON.parse(storedRoles);
+        setUserRoles(Array.isArray(roles) ? roles : [roles]);
+      } catch (e) {
+        setUserRoles([storedRoles]);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -149,7 +167,10 @@ const EditProduct = () => {
         formData.append('price', parseFloat(product.price));
         formData.append('category', product.category);
         formData.append('groupId', parseInt(product.groupId));
-        formData.append('stockQuantity', parseInt(product.stockQuantity) || 0);
+        // Stock quantity can be edited by admin
+        if (isAdmin && product.stockQuantity !== '') {
+          formData.append('stockQuantity', parseInt(product.stockQuantity) || 0);
+        }
         formData.append('image', imageFile);
         
         response = await fetch(`http://127.0.0.1:8000/api/products/${id}`, {
@@ -167,8 +188,11 @@ const EditProduct = () => {
           price: parseFloat(product.price),
           category: product.category,
           groupId: parseInt(product.groupId),
-          stockQuantity: parseInt(product.stockQuantity) || 0
         };
+        // Stock quantity can be edited by admin
+        if (isAdmin && product.stockQuantity !== '') {
+          updateData.stockQuantity = parseInt(product.stockQuantity) || 0;
+        }
         
         response = await fetch(`http://127.0.0.1:8000/api/products/${id}`, {
           method: 'PUT',
@@ -183,6 +207,31 @@ const EditProduct = () => {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to update product');
+      }
+      
+      const result = await response.json();
+      
+      // Log activity to activity logs
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        await fetch('http://127.0.0.1:8000/api/activity-logs/create', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'UPDATE',
+            targetData: JSON.stringify({
+              entity: 'Product',
+              entity_id: id,
+              entity_name: product.name
+            })
+          })
+        });
+        console.log('✅ Product UPDATE logged to activity logs');
+      } catch (logError) {
+        console.error('❌ Failed to log activity:', logError);
       }
       
       alert('Product updated successfully!');
@@ -350,20 +399,40 @@ const EditProduct = () => {
                 </div>
               </div>
 
-              {/* Stock Quantity */}
+              {/* Stock Quantity - Editable for Admin, Read Only for Staff */}
               <div>
                 <label className="block text-gray-700 font-semibold mb-2 text-sm">
-                  Stock Quantity
+                  Stock Quantity {isAdmin ? '' : '(Read Only)'}
                 </label>
-                <input
-                  type="number"
-                  name="stockQuantity"
-                  value={product.stockQuantity}
-                  onChange={handleChange}
-                  min="0"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
-                  placeholder="Enter stock quantity"
-                />
+                {isAdmin ? (
+                  <input
+                    type="number"
+                    name="stockQuantity"
+                    value={product.stockQuantity || 0}
+                    onChange={handleChange}
+                    min="0"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-sm"
+                    placeholder="0"
+                  />
+                ) : (
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={product.stockQuantity || 0}
+                      readOnly
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl bg-gray-50 text-gray-700 font-medium text-sm cursor-not-allowed"
+                      placeholder="0"
+                    />
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <span className="text-xs text-gray-500 font-medium bg-white px-2 py-1 rounded border">Read Only</span>
+                    </div>
+                  </div>
+                )}
+                {isStaffOnly && (
+                  <p className="text-xs text-gray-500 mt-1 font-medium">
+                    💡 To update stock, use the <span className="text-purple-600 font-semibold">Stock Request</span> system
+                  </p>
+                )}
               </div>
             </div>
 
