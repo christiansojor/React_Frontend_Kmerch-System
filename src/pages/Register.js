@@ -55,13 +55,21 @@ const handleRegister = async (e) => {
     });
 
     // Check if response is JSON before parsing
+    const contentType = response.headers.get("content-type");
     let data;
-    try {
-      data = await response.json();
-    } catch (parseError) {
+    
+    if (contentType && contentType.includes("application/json")) {
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error("Failed to parse JSON response:", parseError);
+        alert(`Server returned invalid JSON. Status: ${response.status}`);
+        return;
+      }
+    } else {
       const text = await response.text();
       console.error("Non-JSON response:", text);
-      alert(`Server error: ${response.status} ${response.statusText}`);
+      alert(`Server error: ${response.status} ${response.statusText}. ${text.substring(0, 100)}`);
       return;
     }
 
