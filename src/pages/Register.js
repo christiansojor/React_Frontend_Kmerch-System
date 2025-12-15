@@ -1,6 +1,7 @@
 
 import { useState, useEffect, } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { apiUrl } from "../config/api";
 
 function Register() {
   const [isVisible, setIsVisible] = useState(false);
@@ -40,7 +41,7 @@ const handleRegister = async (e) => {
   e.preventDefault();
 
   try {
-    const response = await fetch("http://127.0.0.1:8000/api/register", {
+    const response = await fetch(apiUrl("/register"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -53,16 +54,27 @@ const handleRegister = async (e) => {
       }),
     });
 
-    const data = await response.json();
+    // Check if response is JSON before parsing
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      const text = await response.text();
+      console.error("Non-JSON response:", text);
+      alert(`Server error: ${response.status} ${response.statusText}`);
+      return;
+    }
 
     if (!response.ok) {
-      alert(data.error || "Registration failed");
+      alert(data.error || `Registration failed: ${response.status} ${response.statusText}`);
       return;
     }
 
     alert("Registration successful! Please log in.");
+    navigate('/login');
   } catch (error) {
-    alert("Something went wrong. Please try again.");
+    console.error("Registration error:", error);
+    alert(error.message || "Something went wrong. Please try again.");
   }
 };
 
@@ -121,27 +133,27 @@ const handleRegister = async (e) => {
       ></div>
 
       {/* Left Side - Logo Section */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center items-center p-8 lg:p-16">
+      <div className="relative z-10 flex-1 flex flex-col justify-center items-center p-6 sm:p-8 lg:p-16 py-12 lg:py-16">
         <div className={`text-center transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          <div className="w-48 h-48 lg:w-64 lg:h-64 mx-auto mb-8 bg-gradient-to-br from-purple-400 to-pink-500 rounded-3xl flex items-center justify-center overflow-hidden group hover:scale-105 transition-transform duration-500 shadow-2xl shadow-purple-500/25">
+          <div className="w-32 h-32 sm:w-48 sm:h-48 lg:w-64 lg:h-64 mx-auto mb-6 sm:mb-8 bg-gradient-to-br from-purple-400 to-pink-500 rounded-3xl flex items-center justify-center overflow-hidden group hover:scale-105 transition-transform duration-500 shadow-2xl shadow-purple-500/25">
             <div className="text-center">
-              <div className="text-6xl font-black text-white mb-2">K</div>
-              <div className="text-sm text-purple-100 font-medium">DREAM</div>
+              <div className="text-4xl sm:text-6xl font-black text-white mb-2">K</div>
+              <div className="text-xs sm:text-sm text-purple-100 font-medium">DREAM</div>
             </div>
           </div>
 
-          <h1 className="text-4xl lg:text-5xl font-black mb-4 bg-gradient-to-r from-purple-400 via-pink-500 to-blue-400 bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-3 sm:mb-4 bg-gradient-to-r from-purple-400 via-pink-500 to-blue-400 bg-clip-text text-transparent">
             K-DREAM
           </h1>
-          <p className="text-xl lg:text-2xl font-bold text-pink-400 mb-6">
+          <p className="text-lg sm:text-xl lg:text-2xl font-bold text-pink-400 mb-4 sm:mb-6">
             MERCHANDISE
           </p>
           
-          <div className="space-y-4 text-gray-300">
-            <p className="text-lg">Join the ultimate</p>
-            <p className="text-lg">K-pop trading community</p>
+          <div className="space-y-2 sm:space-y-4 text-gray-300">
+            <p className="text-base sm:text-lg">Join the ultimate</p>
+            <p className="text-base sm:text-lg">K-pop trading community</p>
             
-            <div className="mt-8 space-y-3">
+            <div className="mt-6 sm:mt-8 space-y-2 sm:space-y-3">
               <div className="group flex items-center justify-center space-x-3 p-3 bg-purple-500/10 backdrop-blur-sm border border-purple-500/20 rounded-xl hover:border-purple-500/40 transition-all duration-300">
                 <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
                 <span className="text-purple-400 font-medium">Exclusive Collections</span>
@@ -162,18 +174,18 @@ const handleRegister = async (e) => {
       </div>
 
       {/* Right Side - Register Form */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center items-center p-8 lg:p-16">
+      <div className="relative z-10 flex-1 flex flex-col justify-center items-center p-6 sm:p-8 lg:p-16 w-full">
         <div className={`w-full max-w-md transition-all duration-1000 delay-300 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
           
-          <div className="bg-gradient-to-br from-gray-900/50 to-black/50 backdrop-blur-lg border border-white/10 rounded-3xl p-8 lg:p-10 shadow-2xl max-h-[85vh] overflow-y-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-black bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
+          <div className="bg-gradient-to-br from-gray-900/50 to-black/50 backdrop-blur-lg border border-white/10 rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-10 shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div className="text-center mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
                 Join K-Dream
               </h2>
-              <p className="text-gray-400">Create your account</p>
+              <p className="text-sm sm:text-base text-gray-400">Create your account</p>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* First Name Field */}
               <div className="relative pt-4">
                 <input
@@ -322,9 +334,9 @@ const handleRegister = async (e) => {
             </div>
 
             {/* Login Link */}
-            <div className="mt-8 text-center">
-              <p className="text-gray-400 mb-4">Already part of K-Dream?</p>
-              <button className="group text-purple-400 hover:text-purple-300 font-medium transition-all duration-300">
+            <div className="mt-6 sm:mt-8 text-center">
+              <p className="text-sm sm:text-base text-gray-400 mb-3 sm:mb-4">Already part of K-Dream?</p>
+              <button className="group text-purple-400 hover:text-purple-300 font-medium transition-all duration-300 text-sm sm:text-base">
                 <Link to="/login">
                   <span className="relative">
                   Sign in to your account

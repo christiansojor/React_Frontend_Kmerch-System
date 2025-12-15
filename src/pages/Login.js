@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { apiUrl } from "../config/api";
 
 function Login() {
   const navigate = useNavigate();
@@ -21,16 +22,25 @@ const handleLogin = async (e) => {
   setError("");
 
   try {
-    const response = await fetch("http://127.0.0.1:8000/api/login", {
+    const response = await fetch(apiUrl("/login"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
 
-    const data = await response.json();
+    // Check if response is JSON before parsing
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      const text = await response.text();
+      console.error("Non-JSON response:", text);
+      setError(`Server error: ${response.status} ${response.statusText}`);
+      return;
+    }
 
     if (!response.ok) {
-      setError(data.error || "Login failed");
+      setError(data.error || `Login failed: ${response.status} ${response.statusText}`);
       return;
     }
 
@@ -70,7 +80,8 @@ const handleLogin = async (e) => {
     }, 0);
 
   } catch (err) {
-    setError("Something went wrong. Please try again.");
+    console.error("Login error:", err);
+    setError(err.message || "Something went wrong. Please try again.");
   } finally {
     setIsLoading(false);
   }
@@ -78,7 +89,7 @@ const handleLogin = async (e) => {
 
 
   return (
-    <div className="min-h-screen bg-black flex overflow-hidden">
+    <div className="min-h-screen bg-black flex flex-col lg:flex-row overflow-hidden">
       {/* Animated Background */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-500/20 to-transparent rounded-full blur-3xl animate-pulse"></div>
@@ -97,27 +108,27 @@ const handleLogin = async (e) => {
       ></div>
 
       {/* Left Side - Logo Section */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center items-center p-8 lg:p-16">
+      <div className="relative z-10 flex-1 flex flex-col justify-center items-center p-6 sm:p-8 lg:p-16 py-12 lg:py-16">
         <div className={`text-center transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          <div className="w-48 h-48 lg:w-64 lg:h-64 mx-auto mb-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-3xl flex items-center justify-center overflow-hidden group hover:scale-105 transition-transform duration-500 shadow-2xl shadow-blue-500/25">
+          <div className="w-32 h-32 sm:w-48 sm:h-48 lg:w-64 lg:h-64 mx-auto mb-6 sm:mb-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-3xl flex items-center justify-center overflow-hidden group hover:scale-105 transition-transform duration-500 shadow-2xl shadow-blue-500/25">
             <div className="text-center">
-              <div className="text-6xl font-black text-white mb-2">K</div>
-              <div className="text-sm text-blue-100 font-medium">DREAM</div>
+              <div className="text-4xl sm:text-6xl font-black text-white mb-2">K</div>
+              <div className="text-xs sm:text-sm text-blue-100 font-medium">DREAM</div>
             </div>
           </div>
 
-          <h1 className="text-4xl lg:text-5xl font-black mb-4 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-3 sm:mb-4 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 bg-clip-text text-transparent">
             K-DREAM
           </h1>
-          <p className="text-xl lg:text-2xl font-bold text-purple-400 mb-6">
+          <p className="text-lg sm:text-xl lg:text-2xl font-bold text-purple-400 mb-4 sm:mb-6">
             MERCHANDISE
           </p>
           
-          <div className="space-y-4 text-gray-300">
-            <p className="text-lg">Welcome back to the ultimate</p>
-            <p className="text-lg">K-pop trading community</p>
+          <div className="space-y-2 sm:space-y-4 text-gray-300">
+            <p className="text-base sm:text-lg">Welcome back to the ultimate</p>
+            <p className="text-base sm:text-lg">K-pop trading community</p>
             
-            <div className="mt-8 space-y-3">
+            <div className="mt-6 sm:mt-8 space-y-2 sm:space-y-3">
               <div className="group flex items-center justify-center space-x-3 p-3 bg-blue-500/10 backdrop-blur-sm border border-blue-500/20 rounded-xl hover:border-blue-500/40 transition-all duration-300">
                 <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
                 <span className="text-blue-400 font-medium">Authentic Merchandise</span>
@@ -138,15 +149,15 @@ const handleLogin = async (e) => {
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center items-center p-8 lg:p-16">
+      <div className="relative z-10 flex-1 flex flex-col justify-center items-center p-6 sm:p-8 lg:p-16 w-full">
         <div className={`w-full max-w-md transition-all duration-1000 delay-300 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
           
-          <div className="bg-gradient-to-br from-gray-900/50 to-black/50 backdrop-blur-lg border border-white/10 rounded-3xl p-8 lg:p-10 shadow-2xl">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-black bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+          <div className="bg-gradient-to-br from-gray-900/50 to-black/50 backdrop-blur-lg border border-white/10 rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-10 shadow-2xl">
+            <div className="text-center mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
                 Welcome Back
               </h2>
-              <p className="text-gray-400">Sign in to your account</p>
+              <p className="text-sm sm:text-base text-gray-400">Sign in to your account</p>
             </div>
 
             {error && (

@@ -68,7 +68,7 @@ const features = [
 
 
 
-<div className="relative z-10 flex flex-col items-center justify-center min-h-[90vh] px-6">
+<div className="relative z-10 flex flex-col items-center justify-center min-h-[90vh] px-4 sm:px-6 py-8 sm:py-12">
   {/* Hero Section */}
   <section id="hero" className="w-full text-center">
     <div
@@ -77,18 +77,18 @@ const features = [
       }`}
     >
       {/* Headline */}
-      <h1 className="text-5xl md:text-7xl font-joyride font-extrabold mb-6 leading-tight">
+      <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-joyride font-extrabold mb-4 sm:mb-6 leading-tight">
         <span className="bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 bg-clip-text text-transparent">
           K-DREAM
         </span>
         <br />
-        <span className="font-alice text-4xl md:text-6xl text-white drop-shadow-md">
+        <span className="font-alice text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl text-white drop-shadow-md">
           MERCHANDISE
         </span>
       </h1>
 
       {/* Subtitle */}
-      <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed">
+      <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-6 sm:mb-8 md:mb-10 max-w-3xl mx-auto leading-relaxed px-4">
         The ultimate platform for K-pop enthusiasts to{" "}
         <span className="text-blue-400 font-semibold">buy</span>,{" "}
         <span className="text-purple-400 font-semibold">sell</span>, and{" "}
@@ -97,29 +97,29 @@ const features = [
       </p>
 
       {/* Features Row */}
-      <div className="grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto mb-8 sm:mb-12 px-4">
         {features.map((f, idx) => (
           <div
             key={idx}
-            className={`p-6 rounded-2xl bg-gradient-to-br ${f.gradient} backdrop-blur-md border border-white/10 shadow-lg hover:scale-105 transition-transform`}
+            className={`p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-gradient-to-br ${f.gradient} backdrop-blur-md border border-white/10 shadow-lg hover:scale-105 transition-transform`}
           >
-            <div className="w-12 h-12 flex items-center justify-center rounded-full bg-white/10 mb-4 mx-auto">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/10 mb-3 sm:mb-4 mx-auto">
               {f.icon}
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">{f.title}</h3>
-            <p className="text-gray-300 text-sm">{f.desc}</p>
+            <h3 className="text-base sm:text-lg font-semibold text-white mb-1 sm:mb-2">{f.title}</h3>
+            <p className="text-gray-300 text-xs sm:text-sm">{f.desc}</p>
           </div>
         ))}
       </div>
 
       {/* CTA Buttons */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <button className="px-8 py-3 text-lg font-semibold rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 text-white shadow-lg hover:opacity-90 transition-all">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
+        <button className="px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 text-white shadow-lg hover:opacity-90 transition-all w-full sm:w-auto">
           <Link to="/login">
             Get Started
           </Link>
         </button>
-        <button className="px-8 py-3 text-lg font-semibold rounded-full border border-white/20 text-gray-200 hover:bg-white/10 transition-all"
+        <button className="px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold rounded-full border border-white/20 text-gray-200 hover:bg-white/10 transition-all w-full sm:w-auto"
             onClick={() => {
               const about = document.getElementById("about")
 
@@ -137,14 +137,14 @@ const features = [
 
        {/* K-Pop Product Showcase */}
 <section id="collections">
-  <div className={`mt-16 max-w-6xl transition-all duration-1000 delay-500 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-    <div className="flex items-center justify-between mb-12">
-      <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+  <div className={`mt-8 sm:mt-12 md:mt-16 max-w-6xl mx-auto px-4 sm:px-6 transition-all duration-1000 delay-500 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 md:mb-12 gap-4">
+      <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
         Featured Collections
       </h2>
       
       {/* Navigation Controls */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-3 sm:space-x-4">
         <button
           onClick={prevSlide}
           disabled={currentIndex === 0}
@@ -172,13 +172,13 @@ const features = [
     </div>
 
     {/* Collections Carousel */}
-    <div className="relative overflow-hidden">
+    <div className="relative overflow-x-auto overflow-y-hidden -mx-4 sm:mx-0">
       <div 
-        className="flex transition-transform duration-500 ease-in-out"
-        style={{ transform: `translateX(-${currentIndex * (100 / 4)}%)` }}
+        className="flex transition-transform duration-500 ease-in-out sm:transform-none"
+        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
         {/* BTS Collection */}
-        <div className="w-1/4 flex-shrink-0 px-3">
+        <div className="w-full sm:w-1/2 lg:w-1/4 flex-shrink-0 px-2 sm:px-3">
           <div className="group relative p-4 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-sm border border-blue-500/20 hover:border-blue-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
                 <img src="/assets/bts pic.jpg" alt="BTS" className="w-full h-full object-cover" />
@@ -194,7 +194,7 @@ const features = [
         </div>
 
         {/* BLACKPINK Collection */}
-        <div className="w-1/4 flex-shrink-0 px-3">
+        <div className="w-full sm:w-1/2 lg:w-1/4 flex-shrink-0 px-2 sm:px-3">
           <div className="group relative p-4 bg-gradient-to-br from-purple-500/10 to-transparent backdrop-blur-sm border border-purple-500/20 hover:border-purple-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
                 <img src="/assets/blackpink pic.jpeg" alt="BTS" className="w-full h-full object-cover" />
@@ -211,7 +211,7 @@ const features = [
         </div>
 
         {/* Stray Kids Collection */}
-        <div className="w-1/4 flex-shrink-0 px-3">
+        <div className="w-full sm:w-1/2 lg:w-1/4 flex-shrink-0 px-2 sm:px-3">
           <div className="group relative p-4 bg-gradient-to-br from-pink-500/10 to-transparent backdrop-blur-sm border border-pink-500/20 hover:border-pink-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-pink-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-pink-600 to-red-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
                   <img src="/assets/stray kids pic.webp" alt="BTS" className="w-full h-full object-cover" />
@@ -228,7 +228,7 @@ const features = [
         </div>
 
         {/* TWICE Collection */}
-        <div className="w-1/4 flex-shrink-0 px-3">
+        <div className="w-full sm:w-1/2 lg:w-1/4 flex-shrink-0 px-2 sm:px-3">
           <div className="group relative p-4 bg-gradient-to-br from-blue-500/10 to-transparent backdrop-blur-sm border border-blue-500/20 hover:border-blue-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
                 <img src="/assets/twice pic.jpg" alt="BTS" className="w-full h-full object-cover" />
@@ -245,7 +245,7 @@ const features = [
         </div>
 
         {/* AESPA Collection */}
-        <div className="w-1/4 flex-shrink-0 px-3">
+        <div className="w-full sm:w-1/2 lg:w-1/4 flex-shrink-0 px-2 sm:px-3">
           <div className="group relative p-4 bg-gradient-to-br from-cyan-500/10 to-transparent backdrop-blur-sm border border-cyan-500/20 hover:border-cyan-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-cyan-600 to-purple-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
                   <img src="/assets/aespa pic.webp" alt="BTS" className="w-full h-full object-cover" />
@@ -262,7 +262,7 @@ const features = [
         </div>
 
         {/* (G)I-DLE Collection */}
-        <div className="w-1/4 flex-shrink-0 px-3">
+        <div className="w-full sm:w-1/2 lg:w-1/4 flex-shrink-0 px-2 sm:px-3">
           <div className="group relative p-4 bg-gradient-to-br from-purple-500/10 to-transparent backdrop-blur-sm border border-purple-500/20 hover:border-purple-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
                  <img src="/assets/idle pic.webp" alt="BTS" className="w-full h-full object-cover" />
@@ -278,7 +278,7 @@ const features = [
         </div>
 
         {/* NMIXX Collection */}
-        <div className="w-1/4 flex-shrink-0 px-3">
+        <div className="w-full sm:w-1/2 lg:w-1/4 flex-shrink-0 px-2 sm:px-3">
           <div className="group relative p-4 bg-gradient-to-br from-pink-500/10 to-transparent backdrop-blur-sm border border-pink-500/20 hover:border-pink-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-pink-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-pink-600 to-orange-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
                 <img src="/assets/nmixx pic.webp" alt="BTS" className="w-full h-full object-cover" />
@@ -294,7 +294,7 @@ const features = [
         </div>
 
         {/* Red Velvet Collection */}
-        <div className="w-1/4 flex-shrink-0 px-3">
+        <div className="w-full sm:w-1/2 lg:w-1/4 flex-shrink-0 px-2 sm:px-3">
           <div className="group relative p-4 bg-gradient-to-br from-red-500/10 to-transparent backdrop-blur-sm border border-red-500/20 hover:border-red-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-red-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-red-600 to-pink-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
                <img src="/assets/red velvet pics.webp" alt="BTS" className="w-full h-full object-cover" />
@@ -311,7 +311,7 @@ const features = [
         </div>
 
         {/* EXO Collection */}
-        <div className="w-1/4 flex-shrink-0 px-3">
+        <div className="w-full sm:w-1/2 lg:w-1/4 flex-shrink-0 px-2 sm:px-3">
           <div className="group relative p-4 bg-gradient-to-br from-indigo-500/10 to-transparent backdrop-blur-sm border border-indigo-500/20 hover:border-indigo-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-indigo-600 to-blue-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
                <img src="/assets/exo pic.webp" alt="BTS" className="w-full h-full object-cover" />
@@ -328,7 +328,7 @@ const features = [
         </div>
 
         {/* BABYMONSTER Collection */}
-        <div className="w-1/4 flex-shrink-0 px-3">
+        <div className="w-full sm:w-1/2 lg:w-1/4 flex-shrink-0 px-2 sm:px-3">
           <div className="group relative p-4 bg-gradient-to-br from-orange-500/10 to-transparent backdrop-blur-sm border border-orange-500/20 hover:border-orange-500/40 rounded-2xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-300 cursor-pointer">
             <div className="aspect-square bg-gradient-to-br from-orange-600 to-red-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform duration-300">
                 <img src="/assets/baemon pic.jpeg" alt="BTS" className="w-full h-full object-cover" />
@@ -362,20 +362,22 @@ const features = [
     </div>  */}
 
     {/* Collection Stats */}
-    <div className="mt-12 text-center">
-      <div className="inline-flex items-center space-x-8 bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-sm border border-white/10 rounded-full px-8 py-4">
+    <div className="mt-8 sm:mt-12 text-center px-4">
+      <div className="inline-flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 lg:space-x-8 bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-sm border border-white/10 rounded-2xl sm:rounded-full px-6 sm:px-8 py-4 sm:py-4">
         <div className="text-center">
-          <div className="text-2xl font-bold text-white">10+</div>
+          <div className="text-xl sm:text-2xl font-bold text-white">10+</div>
           <div className="text-xs text-gray-400">Artist Groups</div>
         </div>
-        <div className="w-px h-8 bg-white/20"></div>
+        <div className="hidden sm:block w-px h-8 bg-white/20"></div>
+        <div className="sm:hidden w-full h-px bg-white/20"></div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-white">1000+</div>
+          <div className="text-xl sm:text-2xl font-bold text-white">1000+</div>
           <div className="text-xs text-gray-400">Items Available</div>
         </div>
-        <div className="w-px h-8 bg-white/20"></div>
+        <div className="hidden sm:block w-px h-8 bg-white/20"></div>
+        <div className="sm:hidden w-full h-px bg-white/20"></div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-white">50K+</div>
+          <div className="text-xl sm:text-2xl font-bold text-white">50K+</div>
           <div className="text-xs text-gray-400">Happy Collectors</div>
         </div>
       </div>
@@ -385,16 +387,16 @@ const features = [
         
 
 {/* Trading Community Section */}
-<section id="trading" className="mt-24 px-6 max-w-7xl mx-auto">
+<section id="trading" className="mt-12 sm:mt-16 md:mt-24 px-4 sm:px-6 max-w-7xl mx-auto">
   {/* Heading */}
-  <div className="text-center mb-16">
-    <span className="px-6 py-2 text-sm font-semibold rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-white/10 text-white">
+  <div className="text-center mb-8 sm:mb-12 md:mb-16">
+    <span className="px-4 sm:px-6 py-2 text-xs sm:text-sm font-semibold rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-white/10 text-white">
       Trading Community
     </span>
-    <h2 className="text-4xl md:text-5xl font-bold mt-6 mb-4 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 bg-clip-text text-transparent">
+    <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mt-4 sm:mt-6 mb-3 sm:mb-4 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 bg-clip-text text-transparent px-4">
       Where Fans Connect & Trade
     </h2>
-    <p className="text-gray-300 text-lg max-w-3xl mx-auto">
+    <p className="text-gray-300 text-base sm:text-lg max-w-3xl mx-auto px-4">
       Join thousands of K-pop enthusiasts in our trusted trading hub. Whether it’s 
       <span className="text-blue-400 font-semibold"> photocards</span>, 
       <span className="text-purple-400 font-semibold"> albums</span>, or 
@@ -404,7 +406,7 @@ const features = [
   </div>
 
   {/* How It Works - Stepper */}
-  <div className="relative flex flex-col md:flex-row items-center md:justify-between gap-12 md:gap-6">
+  <div className="relative flex flex-col md:flex-row items-center md:justify-between gap-8 sm:gap-12 md:gap-6 px-4">
     {/* Step 1 */}
     <div className="flex-1 text-center md:text-left">
       <div className="w-12 h-12 mx-auto md:mx-0 mb-4 flex items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-purple-500 text-white font-bold text-xl shadow-lg">
@@ -446,8 +448,8 @@ const features = [
   </div>
 
   {/* CTA */}
-  <div className="mt-16 text-center">
-    <button className="px-10 py-4 text-lg font-semibold rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 text-white shadow-lg hover:opacity-90 transition-all">
+  <div className="mt-8 sm:mt-12 md:mt-16 text-center px-4">
+    <button className="px-6 sm:px-8 md:px-10 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 text-white shadow-lg hover:opacity-90 transition-all w-full sm:w-auto">
       <Link to="/login">
             Explore Trading Hubs
           </Link>
@@ -459,11 +461,11 @@ const features = [
         </div>
 
         {/* About Section */}
-<section id="about" className="mt-24 max-w-5xl mx-auto px-6 text-center">
-  <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 bg-clip-text text-transparent">
+<section id="about" className="mt-12 sm:mt-16 md:mt-24 max-w-5xl mx-auto px-4 sm:px-6 text-center">
+  <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 bg-clip-text text-transparent">
     About Us
   </h2>
-  <p className="text-gray-300 text-lg leading-relaxed max-w-3xl mx-auto">
+  <p className="text-gray-300 text-base sm:text-lg leading-relaxed max-w-3xl mx-auto">
     K-Dream Merchandise is your official K-pop merchandise distributor. 
     We bring fans closer to their idols by providing a trusted platform 
     to <span className="text-blue-400 font-semibold">buy</span>, 
@@ -475,21 +477,21 @@ const features = [
 </section>
 
 {/* Vision & Mission Section */}
-<section id="vision-mission" className="mt-20 max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-10">
+<section id="vision-mission" className="mt-12 sm:mt-16 md:mt-20 max-w-6xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 md:gap-10">
   {/* Vision */}
-  <div className="p-8 bg-gradient-to-br from-blue-500/10 to-purple-500/10 backdrop-blur-md border border-white/10 rounded-3xl shadow-lg hover:scale-105 transition-transform duration-500">
-    <h3 className="text-2xl font-bold text-white mb-4">Our Vision</h3>
-    <p className="text-gray-300 leading-relaxed">
-      To be the world’s most trusted hub for K-pop fans, where passion, 
+  <div className="p-6 sm:p-8 bg-gradient-to-br from-blue-500/10 to-purple-500/10 backdrop-blur-md border border-white/10 rounded-2xl sm:rounded-3xl shadow-lg hover:scale-105 transition-transform duration-500">
+    <h3 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">Our Vision</h3>
+    <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
+      To be the world's most trusted hub for K-pop fans, where passion, 
       authenticity, and community meet. We aim to make every fan feel 
       closer to their idols and to each other.
     </p>
   </div>
 
   {/* Mission */}
-  <div className="p-8 bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-md border border-white/10 rounded-3xl shadow-lg hover:scale-105 transition-transform duration-500">
-    <h3 className="text-2xl font-bold text-white mb-4">Our Mission</h3>
-    <p className="text-gray-300 leading-relaxed">
+  <div className="p-6 sm:p-8 bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-md border border-white/10 rounded-2xl sm:rounded-3xl shadow-lg hover:scale-105 transition-transform duration-500">
+    <h3 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">Our Mission</h3>
+    <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
       To provide safe and seamless trading, empower fandom groups, 
       and ensure every piece of merchandise is 100% authentic. 
       Our mission is to create a global family of K-pop enthusiasts 
@@ -499,15 +501,15 @@ const features = [
 </section>
 
 {/* Join Community CTA */}
-<section id="community" className="mt-24 text-center">
-  <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">Be Part of Our Community</h2>
-  <p className="text-gray-300 max-w-2xl mx-auto mb-8">
+<section id="community" className="mt-12 sm:mt-16 md:mt-24 text-center px-4">
+  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-white">Be Part of Our Community</h2>
+  <p className="text-gray-300 text-base sm:text-lg max-w-2xl mx-auto mb-6 sm:mb-8">
     Connect with fans worldwide, trade your collectibles, and celebrate 
     the love for K-pop together.
   </p>
   <Link 
     to="/login" 
-    className="inline-block px-10 py-4 text-lg font-semibold rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 text-white shadow-lg hover:opacity-90 transition-all cursor-pointer"
+    className="inline-block px-6 sm:px-8 md:px-10 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 text-white shadow-lg hover:opacity-90 transition-all cursor-pointer w-full sm:w-auto"
   >
     Join Now
   </Link>
@@ -516,9 +518,9 @@ const features = [
       
 
       {/* Footer */}
-      <footer className="relative z-10 mt-20 bg-gradient-to-r from-gray-900/50 to-black/50 backdrop-blur-sm border-t border-white/10">
-        <div className="max-w-6xl mx-auto px-6 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <footer className="relative z-10 mt-12 sm:mt-16 md:mt-20 bg-gradient-to-r from-gray-900/50 to-black/50 backdrop-blur-sm border-t border-white/10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
             {/* Company Info */}
             <div className="md:col-span-1">
               <div className="flex items-center space-x-3 mb-4">
@@ -596,11 +598,11 @@ const features = [
           </div>
 
           {/* Bottom Bar */}
-          <div className="border-t border-white/10 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-500 text-sm mb-4 md:mb-0">
+          <div className="border-t border-white/10 mt-6 sm:mt-8 pt-6 sm:pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-gray-500 text-xs sm:text-sm text-center md:text-left">
               © 2025 K-Dream Merchandise. All rights reserved.
             </p>
-            <div className="flex space-x-6 text-sm">
+            <div className="flex flex-wrap justify-center md:justify-end gap-4 sm:gap-6 text-xs sm:text-sm">
               <button className="text-gray-400 hover:text-white transition-colors">Privacy Policy</button>
               <button className="text-gray-400 hover:text-white transition-colors">Terms of Service</button>
               <button className="text-gray-400 hover:text-white transition-colors">Cookie Policy</button>
