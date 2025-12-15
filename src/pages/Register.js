@@ -102,7 +102,7 @@ const handleRegister = async (e) => {
 // };
 
   return (
-    <div className="min-h-screen bg-black flex overflow-hidden">
+    <div className="min-h-screen bg-black flex flex-col lg:flex-row overflow-hidden">
       {/* Animated Background */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-purple-500/20 to-transparent rounded-full blur-3xl animate-pulse"></div>

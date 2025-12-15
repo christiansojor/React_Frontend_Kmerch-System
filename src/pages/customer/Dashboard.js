@@ -361,37 +361,51 @@ const UserDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-purple-50 to-pink-50">
       <header className="bg-white shadow-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-16 h-16 rounded-lg flex items-center justify-center overflow-hidden">
-                <img 
-                  src="/assets/kmerch_logo.png" 
-                  alt="KMerch Logo" 
-                  className="w-full h-full object-contain"
-                />
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+            <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-start">
+              <div className="flex items-center space-x-2">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <img 
+                    src="/assets/kmerch_logo.png" 
+                    alt="KMerch Logo" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">
+                  ShopTrade
+                </h1>
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">
-                ShopTrade
-              </h1>
+              
+              <div className="flex items-center space-x-2 sm:hidden">
+                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                  <Heart size={20} className="text-gray-600" />
+                </button>
+                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
+                  <ShoppingCart size={20} className="text-gray-600" />
+                  <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                    0
+                  </span>
+                </button>
+              </div>
             </div>
             
             {currentPage === 'ecommerce' && (
-              <div className="flex-1 max-w-md mx-8">
+              <div className="flex-1 max-w-md mx-0 sm:mx-8 w-full sm:w-auto">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type="text"
                     placeholder="Search products..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full pl-9 sm:pl-10 pr-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   />
                 </div>
               </div>
             )}
 
-            <div className="flex items-center space-x-4">
+            <div className="hidden sm:flex items-center space-x-4">
               <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <Heart size={24} className="text-gray-600" />
               </button>
@@ -414,9 +428,9 @@ const UserDashboard = () => {
         </div>
       </header>
 
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex space-x-1">
+      <nav className="bg-white shadow-sm overflow-x-auto">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4">
+          <div className="flex space-x-1 min-w-max sm:min-w-0">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentPage === item.id;
@@ -424,14 +438,14 @@ const UserDashboard = () => {
                 <button
                   key={item.id}
                   onClick={() => setCurrentPage(item.id)}
-                  className={`flex items-center space-x-2 px-6 py-4 font-medium transition-all ${
+                  className={`flex items-center space-x-2 px-4 sm:px-6 py-3 sm:py-4 font-medium transition-all whitespace-nowrap ${
                     isActive
                       ? 'text-cyan-600 border-b-2 border-cyan-600'
                       : 'text-gray-600 hover:text-cyan-600'
                   }`}
                 >
-                  <Icon size={20} />
-                  <span>{item.label}</span>
+                  <Icon size={18} className="sm:w-5 sm:h-5" />
+                  <span className="text-sm sm:text-base">{item.label}</span>
                 </button>
               );
             })}
@@ -439,16 +453,16 @@ const UserDashboard = () => {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {currentPage === 'home' && (
-          <div className="text-center py-20">
-            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">
+          <div className="text-center py-12 sm:py-20">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">
               Welcome to ShopTrade
             </h2>
-            <p className="text-gray-600 text-lg mb-8">
+            <p className="text-gray-600 text-base sm:text-lg mb-6 sm:mb-8">
               Your one-stop destination for shopping and trading
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto">
               <button
                 onClick={() => setCurrentPage('ecommerce')}
                 className="bg-gradient-to-r from-cyan-500 to-cyan-600 text-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
@@ -471,11 +485,11 @@ const UserDashboard = () => {
 
         {currentPage === 'ecommerce' && (
           <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
+              <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">
                 Our Products
               </h2>
-              <p className="text-gray-600">
+              <p className="text-sm sm:text-base text-gray-600">
                 {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} available
               </p>
             </div>
@@ -539,13 +553,13 @@ const UserDashboard = () => {
 
         {currentPage === 'trading' && (
           <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
+              <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">
                 Trading Platform
               </h2>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-medium"
+                className="flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:shadow-lg transition-all font-medium text-sm sm:text-base w-full sm:w-auto justify-center"
               >
                 <Plus size={20} />
                 <span>Create Trade Post</span>
@@ -553,7 +567,7 @@ const UserDashboard = () => {
             </div>
 
             <div className="bg-white rounded-lg shadow-sm mb-6">
-              <div className="flex space-x-1 p-2">
+              <div className="flex space-x-1 p-1 sm:p-2 overflow-x-auto">
                 {tradingTabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = tradingView === tab.id;
@@ -817,7 +831,7 @@ const UserDashboard = () => {
 
       {/* Create Trade Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
@@ -925,7 +939,7 @@ const UserDashboard = () => {
 
       {/* Trade Request Modal */}
       {showRequestModal && selectedTrade && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
@@ -994,7 +1008,7 @@ const UserDashboard = () => {
 
       {/* Confirmation Modal */}
       {confirmAction && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
             <div className="p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-4">Confirm Action</h3>
