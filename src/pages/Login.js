@@ -21,21 +21,38 @@ const handleLogin = async (e) => {
   setIsLoading(true);
   setError("");
 
+  const loginUrl = apiUrl("/login");
+  console.log('[Login] Attempting to login at:', loginUrl);
+  
   try {
-    const response = await fetch(apiUrl("/login"), {
+    const response = await fetch(loginUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
       body: JSON.stringify({ email, password }),
     });
+    
+    console.log('[Login] Response status:', response.status);
+    console.log('[Login] Response headers:', Object.fromEntries(response.headers.entries()));
 
     // Check if response is JSON before parsing
+    const contentType = response.headers.get("content-type");
     let data;
-    try {
-      data = await response.json();
-    } catch (parseError) {
+    
+    if (contentType && contentType.includes("application/json")) {
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error("Failed to parse JSON response:", parseError);
+        setError(`Server returned invalid JSON. Status: ${response.status}`);
+        return;
+      }
+    } else {
       const text = await response.text();
       console.error("Non-JSON response:", text);
-      setError(`Server error: ${response.status} ${response.statusText}`);
+      setError(`Server error: ${response.status} ${response.statusText}. ${text.substring(0, 100)}`);
       return;
     }
 

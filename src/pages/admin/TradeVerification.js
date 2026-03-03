@@ -11,6 +11,7 @@ import {
   AlertCircle,
   X
 } from 'lucide-react';
+import { apiUrl } from '../../config/api';
 
 const TradeVerification = () => {
   const [transactions, setTransactions] = useState([]);
@@ -32,7 +33,6 @@ const TradeVerification = () => {
     rejected: 0
   });
 
-  const API_URL = 'http://127.0.0.1:8000/api/admin/trades';
 
   useEffect(() => {
     fetchTransactions();
@@ -55,8 +55,8 @@ const TradeVerification = () => {
       }
 
       const endpoint = statusFilter === 'all' 
-        ? `${API_URL}/transactions`
-        : `${API_URL}/transactions?status=${statusFilter}`;
+        ? apiUrl('/admin/trades/transactions')
+        : `${apiUrl('/admin/trades/transactions')}?status=${statusFilter}`;
 
       const response = await fetch(endpoint, {
         headers: {
@@ -94,7 +94,7 @@ const TradeVerification = () => {
       
       if (!token) return;
 
-      const response = await fetch(`${API_URL}/statistics`, {
+      const response = await fetch(apiUrl('/admin/trades/statistics'), {
         headers: {
           'Authorization': `Bearer ${token.trim()}`,
           'Content-Type': 'application/json'
@@ -143,7 +143,7 @@ const TradeVerification = () => {
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`${API_URL}/transactions/${selectedTransaction.id}/verify`, {
+      const response = await fetch(apiUrl(`/admin/trades/transactions/${selectedTransaction.id}/verify`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token.trim()}`,
@@ -186,7 +186,7 @@ const TradeVerification = () => {
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`${API_URL}/transactions/${selectedTransaction.id}/reject`, {
+      const response = await fetch(apiUrl(`/admin/trades/transactions/${selectedTransaction.id}/reject`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token.trim()}`,

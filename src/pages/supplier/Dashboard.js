@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiUrl } from '../../config/api';
 import { 
   Package, 
   CheckCircle, 
@@ -34,7 +35,7 @@ const SupplierDashboard = () => {
   const fetchRequests = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://127.0.0.1:8000/api/stock-requests', {
+      const response = await fetch(apiUrl('/stock-requests'), {
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -64,7 +65,7 @@ const SupplierDashboard = () => {
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem('token');
-      await fetch('http://127.0.0.1:8000/api/logout', {
+      await fetch(apiUrl('/logout'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -84,7 +85,7 @@ const SupplierDashboard = () => {
     setActionLoading(id);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://127.0.0.1:8000/api/stock-requests/${id}/${action}`, {
+      const response = await fetch(apiUrl(`/stock-requests/${id}/${action}`), {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -118,7 +119,7 @@ const SupplierDashboard = () => {
     setActionLoading(id);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://127.0.0.1:8000/api/stock-requests/${id}`, {
+      const response = await fetch(apiUrl(`/stock-requests/${id}`), {
         method: 'DELETE',
         headers: { 
           'Content-Type': 'application/json',

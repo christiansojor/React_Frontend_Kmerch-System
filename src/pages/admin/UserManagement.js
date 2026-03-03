@@ -3,6 +3,7 @@ import { Edit, Trash2, Plus, Users, X, CheckCircle, XCircle, Archive } from 'luc
 import $ from 'jquery';
 import 'datatables.net';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
+import { apiUrl } from '../../config/api';
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -24,8 +25,6 @@ export default function UserManagement() {
     password: '',
     roles: []
   });
-
-  const API_URL = 'http://localhost:8000';
   
   // Get token from localStorage
   const getToken = () => {
@@ -234,7 +233,7 @@ export default function UserManagement() {
       setLoading(true);
       const token = getToken();
       
-      const response = await fetch(`${API_URL}/api/admin/users`, {
+      const response = await fetch(apiUrl('/admin/users'), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -326,8 +325,8 @@ export default function UserManagement() {
 
       const token = getToken();
       const url = editingUser 
-        ? `${API_URL}/api/admin/users/${editingUser.id}`
-        : `${API_URL}/api/admin/users`;
+        ? apiUrl(`/admin/users/${editingUser.id}`)
+        : apiUrl('/admin/users');
       
       const method = editingUser ? 'PUT' : 'POST';
 
@@ -394,7 +393,7 @@ export default function UserManagement() {
       const newStatus = statusCycle[currentStatus] || 'active';
       const token = getToken();
 
-      const response = await fetch(`${API_URL}/api/admin/users/${userId}/status`, {
+      const response = await fetch(apiUrl(`/admin/users/${userId}/status`), {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -436,7 +435,7 @@ export default function UserManagement() {
     try {
       const token = getToken();
       
-      const response = await fetch(`${API_URL}/api/admin/users/${userId}`, {
+      const response = await fetch(apiUrl(`/admin/users/${userId}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

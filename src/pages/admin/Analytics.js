@@ -38,13 +38,13 @@ ChartJS.register(
   Filler
 );
 
+import { apiUrl } from '../../config/api';
+
 const Analytics = () => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [days, setDays] = useState(30);
-
-  const API_URL = 'http://127.0.0.1:8000/api/admin/analytics';
 
   useEffect(() => {
     fetchAnalytics();
@@ -62,7 +62,7 @@ const Analytics = () => {
         return;
       }
 
-      const response = await fetch(`${API_URL}?days=${days}`, {
+      const response = await fetch(`${apiUrl('/admin/analytics')}?days=${days}`, {
         headers: {
           'Authorization': `Bearer ${token.trim()}`,
           'Content-Type': 'application/json'

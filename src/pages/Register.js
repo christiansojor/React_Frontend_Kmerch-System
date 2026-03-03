@@ -40,10 +40,16 @@ function Register() {
 const handleRegister = async (e) => {
   e.preventDefault();
 
+  const registerUrl = apiUrl("/register");
+  console.log('[Register] Attempting to register at:', registerUrl);
+  
   try {
-    const response = await fetch(apiUrl("/register"), {
+    const response = await fetch(registerUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
       body: JSON.stringify({
         firstName: fullname,
         lastName: username,
@@ -53,6 +59,9 @@ const handleRegister = async (e) => {
         password: password,
       }),
     });
+    
+    console.log('[Register] Response status:', response.status);
+    console.log('[Register] Response headers:', Object.fromEntries(response.headers.entries()));
 
     // Check if response is JSON before parsing
     const contentType = response.headers.get("content-type");

@@ -12,6 +12,7 @@ import {
   FileText,
   RefreshCw
 } from 'lucide-react';
+import { apiUrl } from '../../config/api';
 
 const PurchaseRecords = () => {
   const [orders, setOrders] = useState([]);
@@ -31,8 +32,6 @@ const PurchaseRecords = () => {
     totalQuantity: 0,
     averageOrderValue: 0
   });
-
-  const API_URL = 'http://127.0.0.1:8000/api/admin/purchase-records';
 
   useEffect(() => {
     fetchOrders();
@@ -59,7 +58,7 @@ const PurchaseRecords = () => {
       if (dateFrom) params.append('dateFrom', dateFrom);
       if (dateTo) params.append('dateTo', dateTo);
 
-      const response = await fetch(`${API_URL}?${params.toString()}`, {
+      const response = await fetch(`${apiUrl('/admin/purchase-records')}?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token.trim()}`,
           'Content-Type': 'application/json'
@@ -95,7 +94,7 @@ const PurchaseRecords = () => {
       
       if (!token) return;
 
-      const response = await fetch(`${API_URL}/statistics`, {
+      const response = await fetch(apiUrl('/admin/purchase-records/statistics'), {
         headers: {
           'Authorization': `Bearer ${token.trim()}`,
           'Content-Type': 'application/json'
@@ -317,7 +316,7 @@ const PurchaseRecords = () => {
                         <div className="flex items-center gap-3">
                           {order.product.image && (
                             <img 
-                              src={order.product.image.startsWith('http') ? order.product.image : `http://127.0.0.1:8000${order.product.image}`}
+                              src={order.product.image.startsWith('http') ? order.product.image : `${apiUrl('').replace('/api', '')}${order.product.image}`}
                               alt={order.product.name}
                               className="w-10 h-10 object-cover rounded"
                               onError={(e) => { e.target.style.display = 'none'; }}
@@ -415,7 +414,7 @@ const PurchaseRecords = () => {
                     <div className="flex items-start gap-4">
                       {selectedOrder.product.image && (
                         <img 
-                          src={selectedOrder.product.image.startsWith('http') ? selectedOrder.product.image : `http://127.0.0.1:8000${selectedOrder.product.image}`}
+                          src={selectedOrder.product.image.startsWith('http') ? selectedOrder.product.image : `${apiUrl('').replace('/api', '')}${selectedOrder.product.image}`}
                           alt={selectedOrder.product.name}
                           className="w-24 h-24 object-cover rounded-lg"
                           onError={(e) => { e.target.style.display = 'none'; }}

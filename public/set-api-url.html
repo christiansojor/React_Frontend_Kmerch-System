@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Set API URL</title>
+</head>
+<body>
+    <h1>Set API URL for Testing</h1>
+    <p>This will set the API URL in localStorage (temporary fix until you restart React server).</p>
+    <button onclick="setApiUrl()">Set API URL to Backend Ngrok</button>
+    <button onclick="clearApiUrl()">Clear (use .env instead)</button>
+    <p id="status"></p>
+    
+    <script>
+        function setApiUrl() {
+            const url = 'https://unconsigned-bursate-walker.ngrok-free.dev';
+            localStorage.setItem('API_BASE_URL', url);
+            document.getElementById('status').innerHTML = 
+                '✅ Set! API URL: ' + url + '<br>Now reload the main app page.';
+        }
+        
+        function clearApiUrl() {
+            localStorage.removeItem('API_BASE_URL');
+            document.getElementById('status').innerHTML = 
+                '✅ Cleared! Will use .env file (requires React server restart).';
+        }
+        
+        // Show current value
+        const current = localStorage.getItem('API_BASE_URL');
+        if (current) {
+            document.getElementById('status').innerHTML = 
+                'Current API URL: ' + current;
+        }
+    </script>
+</body>
+</html>
+

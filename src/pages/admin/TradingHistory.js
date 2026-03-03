@@ -36,8 +36,6 @@ const TradingHistory = () => {
     totalActive: 0
   });
 
-  const API_URL = 'http://127.0.0.1:8000/api/admin/trading-history';
-
   useEffect(() => {
     fetchTransactions();
     fetchStatistics();
@@ -63,7 +61,7 @@ const TradingHistory = () => {
       if (dateFrom) params.append('dateFrom', dateFrom);
       if (dateTo) params.append('dateTo', dateTo);
 
-      const response = await fetch(`${API_URL}?${params.toString()}`, {
+      const response = await fetch(`${apiUrl('/admin/trading-history')}?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token.trim()}`,
           'Content-Type': 'application/json'
@@ -99,7 +97,7 @@ const TradingHistory = () => {
       
       if (!token) return;
 
-      const response = await fetch(`${API_URL}/statistics`, {
+      const response = await fetch(apiUrl('/admin/trading-history/statistics'), {
         headers: {
           'Authorization': `Bearer ${token.trim()}`,
           'Content-Type': 'application/json'

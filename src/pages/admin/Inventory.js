@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Box
 } from 'lucide-react';
+import { apiUrl } from '../../config/api';
 
 const Inventory = () => {
   const [products, setProducts] = useState([]);
@@ -33,8 +34,6 @@ const Inventory = () => {
     outOfStockCount: 0,
     activeProducts: 0
   });
-
-  const API_URL = 'http://127.0.0.1:8000/api/admin/inventory';
 
   useEffect(() => {
     fetchProducts();
@@ -61,7 +60,7 @@ const Inventory = () => {
       if (lowStockFilter) params.append('lowStock', 'true');
       if (statusFilter !== 'all') params.append('status', statusFilter);
 
-      const response = await fetch(`${API_URL}/products?${params.toString()}`, {
+      const response = await fetch(`${apiUrl('/admin/inventory/products')}?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token.trim()}`,
           'Content-Type': 'application/json'
@@ -97,7 +96,7 @@ const Inventory = () => {
       
       if (!token) return;
 
-      const response = await fetch(`${API_URL}/statistics`, {
+      const response = await fetch(apiUrl('/admin/inventory/statistics'), {
         headers: {
           'Authorization': `Bearer ${token.trim()}`,
           'Content-Type': 'application/json'
@@ -150,7 +149,7 @@ const Inventory = () => {
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`${API_URL}/products/${selectedProduct.id}/add-stock`, {
+      const response = await fetch(apiUrl(`/admin/inventory/products/${selectedProduct.id}/add-stock`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token.trim()}`,
@@ -196,7 +195,7 @@ const Inventory = () => {
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`${API_URL}/products/${selectedProduct.id}/update-stock`, {
+      const response = await fetch(apiUrl(`/admin/inventory/products/${selectedProduct.id}/update-stock`), {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token.trim()}`,

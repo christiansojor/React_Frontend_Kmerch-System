@@ -3,8 +3,7 @@ import { Eye, Edit2, Trash2, Plus, X, Building2 } from 'lucide-react';
 import $ from 'jquery';
 import 'datatables.net';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
-
-const API_BASE = 'http://localhost:8000/api/suppliers';
+import { apiUrl } from '../../../config/api';
 
 export default function SupplierManagement() {
   const [suppliers, setSuppliers] = useState([]);
@@ -57,7 +56,7 @@ export default function SupplierManagement() {
 
       console.log('📝 [ACTIVITY LOG] Sending activity log:', activityData);
 
-      const response = await fetch('http://localhost:8000/api/activity-logs/create', {
+      const response = await fetch(apiUrl('/activity-logs/create'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -273,7 +272,7 @@ export default function SupplierManagement() {
       console.log('🔵 [SUPPLIER] Fetching suppliers...');
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch(API_BASE, {
+      const res = await fetch(apiUrl('/suppliers'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -312,7 +311,7 @@ export default function SupplierManagement() {
     try {
       console.log('👁️ [SUPPLIER] Viewing supplier:', id);
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/${id}`, {
+      const res = await fetch(apiUrl(`/suppliers/${id}`), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -339,7 +338,7 @@ export default function SupplierManagement() {
       console.log('✏️ [SUPPLIER] Current User:', userData);
       console.log('✏️ [SUPPLIER] User Role:', userData?.role || 'Unknown');
       
-      const res = await fetch(`${API_BASE}/${id}`, {
+      const res = await fetch(apiUrl(`/suppliers/${id}`), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -379,7 +378,7 @@ export default function SupplierManagement() {
       console.log('🗑️ [SUPPLIER] User ID:', userData?.id || 'Unknown');
       console.log('🗑️ [SUPPLIER] Username:', userData?.username || 'Unknown');
       
-      const res = await fetch(`${API_BASE}/${id}`, { 
+      const res = await fetch(apiUrl(`/suppliers/${id}`), { 
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -437,7 +436,7 @@ export default function SupplierManagement() {
       console.log('➕ [SUPPLIER] User ID:', userData?.id || 'Unknown');
       console.log('➕ [SUPPLIER] Username:', userData?.username || 'Unknown');
       
-      const url = modalMode === 'add' ? API_BASE : `${API_BASE}/${selectedSupplier.id}`;
+      const url = modalMode === 'add' ? apiUrl('/suppliers') : apiUrl(`/suppliers/${selectedSupplier.id}`);
       const method = modalMode === 'add' ? 'POST' : 'PUT';
       
       console.log(`➕ [SUPPLIER] Sending ${method} to ${url}`);

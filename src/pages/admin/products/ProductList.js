@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiUrl } from '../../../config/api';
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -9,7 +10,7 @@ const ProductList = () => {
   const fetchProducts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://127.0.0.1:8000/api/products', {
+      const res = await fetch(apiUrl('/products'), {
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -29,7 +30,7 @@ const ProductList = () => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://127.0.0.1:8000/api/products/${id}`, {
+      const res = await fetch(apiUrl(`/products/${id}`), {
         method: 'DELETE',
         headers: { 
           'Authorization': `Bearer ${token}` 

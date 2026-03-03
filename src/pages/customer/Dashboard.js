@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, TrendingUp, Home, User, Search, Heart, Plus, Send, X, MessageSquare, Clock, CheckCircle, XCircle, Package, ArrowRightLeft, LogOut } from 'lucide-react';
+import { apiUrl } from '../../config/api';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -17,8 +18,6 @@ const UserDashboard = () => {
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
-
-  const API_URL = 'http://127.0.0.1:8000/api';
 
   // Fetch products from backend
   useEffect(() => {
@@ -46,7 +45,7 @@ const UserDashboard = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const res = await fetch(`${API_URL}/products`, {
+      const res = await fetch(apiUrl('/products'), {
         headers
       });
 
@@ -73,7 +72,7 @@ const UserDashboard = () => {
 
       // Trim token to remove any whitespace
       const cleanToken = token.trim();
-      
+
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${cleanToken}`
@@ -83,13 +82,13 @@ const UserDashboard = () => {
       let endpoint = '';
       
       if (tradingView === 'browse') {
-        endpoint = `${API_URL}/trades`;
+        endpoint = apiUrl('/trades');
       } else if (tradingView === 'my-posts') {
-        endpoint = `${API_URL}/trades/my-posts`;
+        endpoint = apiUrl('/trades/my-posts');
       } else if (tradingView === 'requests-sent') {
-        endpoint = `${API_URL}/trades/requests/sent`;
+        endpoint = apiUrl('/trades/requests/sent');
       } else if (tradingView === 'requests-received') {
-        endpoint = `${API_URL}/trades/requests/received`;
+        endpoint = apiUrl('/trades/requests/received');
       }
 
       if (!endpoint) {
@@ -100,7 +99,7 @@ const UserDashboard = () => {
       res = await fetch(endpoint, {
         method: 'GET',
         headers: headers
-      });
+        });
 
       // Handle 401/403 errors
       if (res.status === 401 || res.status === 403) {
@@ -129,7 +128,7 @@ const UserDashboard = () => {
         throw new Error(`Server returned ${contentType} instead of JSON. Status: ${res.status}`);
       }
 
-      const data = await res.json();
+          const data = await res.json();
 
       if (res.ok) {
         // Update appropriate state based on view
@@ -151,7 +150,7 @@ const UserDashboard = () => {
           setMyTradePosts([]);
         } else if (tradingView === 'requests-sent') {
           setSentRequests([]);
-        } else if (tradingView === 'requests-received') {
+      } else if (tradingView === 'requests-received') {
           setReceivedRequests([]);
         }
       }
@@ -178,7 +177,7 @@ const UserDashboard = () => {
     }
     
     try {
-      const res = await fetch(`${API_URL}/trades`, {
+      const res = await fetch(apiUrl('/trades'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -218,7 +217,7 @@ const UserDashboard = () => {
     }
     
     try {
-      const res = await fetch(`${API_URL}/trades/${selectedTrade.id}/request`, {
+        const res = await fetch(apiUrl(`/trades/${selectedTrade.id}/request`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -278,7 +277,7 @@ const UserDashboard = () => {
       };
 
       if (confirmAction.type === 'accept') {
-        const res = await fetch(`${API_URL}/trades/requests/${confirmAction.id}/accept`, {
+        const res = await fetch(apiUrl(`/trades/requests/${confirmAction.id}/accept`), {
           method: 'POST',
           headers
         });
@@ -291,7 +290,7 @@ const UserDashboard = () => {
           alert(error.error || 'Failed to accept request');
         }
       } else if (confirmAction.type === 'reject') {
-        const res = await fetch(`${API_URL}/trades/requests/${confirmAction.id}/reject`, {
+        const res = await fetch(apiUrl(`/trades/requests/${confirmAction.id}/reject`), {
           method: 'POST',
           headers
         });
@@ -364,17 +363,17 @@ const UserDashboard = () => {
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
             <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-start">
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
                 <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
-                  <img 
-                    src="/assets/kmerch_logo.png" 
-                    alt="KMerch Logo" 
-                    className="w-full h-full object-contain"
-                  />
-                </div>
+                <img 
+                  src="/assets/kmerch_logo.png" 
+                  alt="KMerch Logo" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
                 <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">
-                  ShopTrade
-                </h1>
+                ShopTrade
+              </h1>
               </div>
               
               <div className="flex items-center space-x-2 sm:hidden">
@@ -386,6 +385,13 @@ const UserDashboard = () => {
                   <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
                     0
                   </span>
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Logout"
+                >
+                  <LogOut size={20} className="text-gray-600" />
                 </button>
               </div>
             </div>

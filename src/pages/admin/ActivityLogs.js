@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, RefreshCw, Activity, User, Clock, Shield } from 'lucide-react';
+import { apiUrl } from '../../config/api';
 
 export default function ActivityLogs() {
   const [logs, setLogs] = useState([]);
@@ -10,8 +11,6 @@ export default function ActivityLogs() {
     username: '',
     limit: 100
   });
-
-  const API_URL = 'http://localhost:8000';
   const token = localStorage.getItem('token');
 
   useEffect(() => {
